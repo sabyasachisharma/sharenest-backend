@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { MulterModule } from '@nestjs/platform-express';
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -26,76 +26,50 @@ import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
-    // Global config module with fallback env path
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, "..", "uploads"),
+      serveRoot: '/uploads',
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [`.env.${process.env.NODE_ENV || 'development'}`, '.env'],
     }),
-
-    // Static files for uploaded content
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
-      serveRoot: '/uploads',
-    }),
-
-    // Sequelize async configuration
-    SequelizeModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => {
-        const dbConfig = {
-          dialect: configService.get<'mysql'>('DB_DIALECT', 'mysql'),
-          dialectModule: require('mysql2'),
-          host: configService.get<string>('DB_HOST', 'localhost'),
-          port: parseInt(configService.get<string>('DB_PORT', '3306')),
-          username: configService.get<string>('DB_USERNAME', 'root'),
-          password: configService.get<string>('DB_PASSWORD', ''),
-          database: configService.get<string>('DB_NAME', 'test'),
-          models: [
-            User,
-            Property,
-            PropertyImage,
-            Favorite,
-            Booking,
-            Review,
-            RefreshToken,
-            VerificationToken,
-            PasswordResetToken,
-          ],
-          autoLoadModels: true,
-          synchronize: configService.get<string>('NODE_ENV') === 'development',
-          logging: configService.get<string>('NODE_ENV') === 'development' ? console.log : false,
-          pool: {
-            max: 20,
-            min: 5,
-            acquire: 60000,
-            idle: 10000,
-          },
-          define: {
-            timestamps: true,
-            underscored: true,
-          },
-        };
-
-        // Optional debug output
-        console.log('Sequelize DB Config:', dbConfig);
-        return dbConfig;
+    SequelizeModule.forRoot({
+      dialect: "mysql",
+      host: process.env.MYSQL_HOST,
+      port: Number(process.env.MYSQL_PORT),
+      database: process.env.MYSQL_DB_NAME,
+      username: process.env.MYSQL_DB_USER,
+      password: process.env.MYSQL_DB_PASS,
+      pool: {
+        max: 300,
+        min: 20,
+        idle: 30000,
+        acquire: 90000,
       },
-      inject: [ConfigService],
+      retry: {
+        max: 3,
+        match: [/ETIMEDOUT/],
+      },
+      models: [
+        User,
+        Property,
+        PropertyImage,
+        Favorite,
+        Booking,
+        Review,
+        RefreshToken,
+        VerificationToken,
+        PasswordResetToken,
+      ],
+      logging: false,
     }),
-
-    // File upload configuration
-    MulterModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        dest: configService.get<string>('UPLOAD_DESTINATION', './uploads'),
-        limits: {
-          fileSize: parseInt(configService.get<string>('MAX_FILE_SIZE', '5242880')),
-        },
-      }),
-      inject: [ConfigService],
+    MulterModule.register({
+      dest: process.env.UPLOAD_DESTINATION || './uploads',
+      limits: {
+        fileSize: parseInt(process.env.MAX_FILE_SIZE || '5242880'),
+      },
     }),
-
-    // Feature modules
     UsersModule,
     AuthModule,
     PropertiesModule,
