@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  mysqlsharenest:
+    container_name: mysql-sharenest
+    image: mysql/mysql-server:8.0.32
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: sharenest
+      MYSQL_USER: sharenestadmin
+      MYSQL_PASSWORD: sharenest123
+      MYSQL_HOST: '%'
+      MYSQL_ROOT_HOST: '%'
+    command: --bind-address=0.0.0.0
+    volumes:
+      - "./src/database/config/init.sql:/docker-entrypoint-initdb.d/1.sql"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "sharenestadmin", "--password=sharenest123"]
+      interval: "10s"
+      timeout: "5s"
+      retries: 5
+      start_period: "30s"
+
+volumes:
+  mysql_data:
+    driver: local
+  uploads:
+    driver: local
