@@ -1,9 +1,10 @@
-import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { User } from './entities/user.entity';
+import { User, UserStatus } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ConfigService } from '@nestjs/config';
+import { CommonUtils } from '../common/utils/common.utils';
 
 @Injectable()
 export class UsersService {
@@ -14,16 +15,47 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
+    Logger.log(`Creating user with email: ${createUserDto.email}`);
+    
     // Check if user already exists
     const existingUser = await this.userModel.findOne({
       where: { email: createUserDto.email },
     });
-
+    
     if (existingUser) {
       throw new BadRequestException('User with this email already exists');
     }
 
-    return this.userModel.create({ ...createUserDto });
+    // Hash password and prepare user data
+    const hashedPassword = await CommonUtils.generatePasswordHash(createUserDto.password);
+    
+    const userData = {
+      ...createUserDto,
+      password: hashedPassword,
+      status: UserStatus.ACTIVE,
+    };
+
+    const user = await this.userModel.create(userData);
+    Logger.log(`User created successfully with ID: ${user.id}`);
+    
+    return user;
+  }
+
+  async validatePassword(candidatePassword: string, hashedPassword: string): Promise<boolean> {
+    return CommonUtils.validatePassword(candidatePassword, hashedPassword);
+  }
+
+  async updateUserPasswordAndResetUserStatus(userId: string, password: string): Promise<void> {
+    const hashedPassword = await CommonUtils.generatePasswordHash(password);
+    
+    await this.userModel.update(
+      {
+        password: hashedPassword,
+        status: UserStatus.ACTIVE,
+        updatedAt: new Date(),
+      },
+      { where: { id: userId } }
+    );
   }
 
   async findAll(): Promise<User[]> {
@@ -45,7 +77,7 @@ export class UsersService {
   }
 
   async findByEmailWithPassword(email: string): Promise<User> {
-    return this.userModel.scope('withPassword').findOne({
+    return this.userModel.findOne({
       where: { email },
     });
   }
@@ -76,30 +108,24 @@ export class UsersService {
     return user;
   }
 
-  async markAsVerified(id: string): Promise<User> {
-    const user = await this.findOne(id);
-    await user.update({ isVerified: true });
-    return user;
-  }
-
   async changePassword(
     id: string,
     currentPassword: string,
     newPassword: string,
   ): Promise<boolean> {
-    const user = await this.userModel.scope('withPassword').findByPk(id);
+    const user = await this.userModel.findByPk(id);
     
     if (!user) {
       throw new NotFoundException('User not found');
     }
     
-    const isPasswordValid = await user.comparePassword(currentPassword);
+    const isPasswordValid = await CommonUtils.comparePassword(currentPassword, user.password);
     
     if (!isPasswordValid) {
       return false;
     }
     
-    await user.update({ password: newPassword });
+    await this.updateUserPasswordAndResetUserStatus(id, newPassword);
     return true;
   }
 

@@ -1,5 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsBoolean, IsOptional } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsBoolean, IsOptional, IsEnum } from 'class-validator';
+
+export enum ApplicationTypeEnum {
+  MOBILE_APP = 'mobile_app',
+  WEB_APP = 'web_app',
+}
 
 export class LoginDto {
   @ApiProperty({ example: 'john.doe@example.com' })
@@ -15,4 +20,14 @@ export class LoginDto {
   @IsOptional()
   @IsBoolean()
   rememberMe?: boolean;
+
+  @ApiProperty({ 
+    example: ApplicationTypeEnum.WEB_APP, 
+    enum: ApplicationTypeEnum,
+    required: false, 
+    default: ApplicationTypeEnum.WEB_APP 
+  })
+  @IsOptional()
+  @IsEnum(ApplicationTypeEnum)
+  application?: ApplicationTypeEnum;
 }

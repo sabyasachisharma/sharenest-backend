@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { MulterModule } from '@nestjs/platform-express';
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -8,13 +8,9 @@ import { join } from 'path';
 // Entity imports
 import { User } from './users/entities/user.entity';
 import { Property } from './properties/entities/property.entity';
-import { PropertyImage } from './properties/entities/property-image.entity';
 import { Favorite } from './properties/entities/favorite.entity';
 import { Booking } from './bookings/entities/booking.entity';
 import { Review } from './reviews/entities/review.entity';
-import { RefreshToken } from './auth/entities/refresh-token.entity';
-import { VerificationToken } from './auth/entities/verification-token.entity';
-import { PasswordResetToken } from './auth/entities/password-reset-token.entity';
 
 // Module imports
 import { UsersModule } from './users/users.module';
@@ -54,13 +50,9 @@ import { MailModule } from './mail/mail.module';
       models: [
         User,
         Property,
-        PropertyImage,
         Favorite,
         Booking,
         Review,
-        RefreshToken,
-        VerificationToken,
-        PasswordResetToken,
       ],
       logging: false,
     }),

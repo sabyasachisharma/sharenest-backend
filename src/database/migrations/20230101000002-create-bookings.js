@@ -6,7 +6,7 @@ module.exports = {
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
       },
-      propertyId: {
+      property_id: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
@@ -16,7 +16,7 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      tenantId: {
+      tenant_id: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
@@ -26,11 +26,11 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      startDate: {
+      start_date: {
         type: Sequelize.DATE,
         allowNull: false,
       },
-      endDate: {
+      end_date: {
         type: Sequelize.DATE,
         allowNull: false,
       },
@@ -42,11 +42,11 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true,
       },
-      createdAt: {
+      created_at: {
         type: Sequelize.DATE,
         allowNull: false,
       },
-      updatedAt: {
+      updated_at: {
         type: Sequelize.DATE,
         allowNull: false,
       },

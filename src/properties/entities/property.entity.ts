@@ -6,9 +6,10 @@ import {
   ForeignKey,
   BelongsTo,
   HasMany,
+  CreatedAt,
+  UpdatedAt,
 } from 'sequelize-typescript';
 import { User } from '../../users/entities/user.entity';
-import { PropertyImage } from './property-image.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { Review } from '../../reviews/entities/review.entity';
 import { Favorite } from './favorite.entity';
@@ -19,7 +20,10 @@ export enum PropertyCategory {
   STUDENT_HOUSING = 'student_housing',
 }
 
-@Table
+@Table({
+  tableName: 'Properties',
+  timestamps: true,
+})
 export class Property extends Model {
   @Column({
     type: DataType.UUID,
@@ -28,11 +32,26 @@ export class Property extends Model {
   })
   id: string;
 
+  @ForeignKey(() => User)
+  @Column({
+    type: DataType.UUID,
+    allowNull: false,
+    field: 'owner_id',
+  })
+  ownerId: string;
+
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
   title: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    unique: true,
+  })
+  slug: string;
 
   @Column({
     type: DataType.TEXT,
@@ -65,17 +84,22 @@ export class Property extends Model {
   address: string;
 
   @Column({
+    type: DataType.DECIMAL(8, 6),
+    allowNull: true,
+  })
+  latitude: number;
+
+  @Column({
+    type: DataType.DECIMAL(9, 6),
+    allowNull: true,
+  })
+  longitude: number;
+
+  @Column({
     type: DataType.DECIMAL(10, 2),
     allowNull: false,
   })
   price: number;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: false,
-    defaultValue: 'month',
-  })
-  priceUnit: string;
 
   @Column({
     type: DataType.INTEGER,
@@ -96,54 +120,56 @@ export class Property extends Model {
   size: number;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.JSON,
     allowNull: true,
   })
-  sizeUnit: string;
+  amenities: string[];
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'image_url',
+  })
+  imageUrl: string;
 
   @Column({
     type: DataType.DATE,
     allowNull: false,
+    field: 'available_from',
   })
   availableFrom: Date;
 
   @Column({
     type: DataType.DATE,
     allowNull: true,
+    field: 'available_to',
   })
   availableTo: Date;
 
   @Column({
-    type: DataType.JSON,
-    allowNull: true,
-    get() {
-      const rawValue = this.getDataValue('amenities');
-      return rawValue ? JSON.parse(rawValue) : [];
-    },
-    set(value: string[]) {
-      this.setDataValue('amenities', JSON.stringify(value));
-    }
+    type: DataType.BOOLEAN,
+    defaultValue: true,
+    field: 'is_available',
   })
-  amenities: string[];
+  isAvailable: boolean;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: true,
+    field: 'is_active',
   })
   isActive: boolean;
 
-  @ForeignKey(() => User)
-  @Column({
-    type: DataType.UUID,
-    allowNull: false,
-  })
-  ownerId: string;
+  @CreatedAt
+  @Column({ field: "created_at" })
+  createdAt: Date;
+
+  @UpdatedAt
+  @Column({ field: "updated_at" })
+  updatedAt: Date;
 
   @BelongsTo(() => User)
   owner: User;
-
-  @HasMany(() => PropertyImage)
-  images: PropertyImage[];
 
   @HasMany(() => Booking)
   bookings: Booking[];
@@ -153,16 +179,4 @@ export class Property extends Model {
 
   @HasMany(() => Favorite)
   favorites: Favorite[];
-
-  @Column({
-    type: DataType.FLOAT,
-    allowNull: true,
-  })
-  latitude: number;
-
-  @Column({
-    type: DataType.FLOAT,
-    allowNull: true,
-  })
-  longitude: number;
 }

@@ -11,16 +11,12 @@ import {
   Request,
   NotFoundException,
   ForbiddenException,
-  UseInterceptors,
-  UploadedFiles,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiConsumes,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -120,53 +116,6 @@ export class PropertiesController {
     
     await this.propertiesService.remove(id);
     return { message: 'Property deleted successfully' };
-  }
-
-  @Post(':id/images')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.LANDLORD)
-  @ApiBearerAuth()
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload property images' })
-  @UseInterceptors(FilesInterceptor('images', 10))
-  async uploadImages(
-    @Request() req,
-    @Param('id') id: string,
-    @UploadedFiles() files: Express.Multer.File[],
-  ) {
-    const property = await this.propertiesService.findOne(id);
-    
-    if (!property) {
-      throw new NotFoundException('Property not found');
-    }
-    
-    if (property.ownerId !== req.user.id) {
-      throw new ForbiddenException('You do not have permission to update this property');
-    }
-    
-    return this.propertiesService.addImages(id, files);
-  }
-
-  @Delete('images/:imageId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.LANDLORD)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete a property image' })
-  async removeImage(@Request() req, @Param('imageId') imageId: string) {
-    const image = await this.propertiesService.findImage(imageId);
-    
-    if (!image) {
-      throw new NotFoundException('Image not found');
-    }
-    
-    const property = await this.propertiesService.findOne(image.propertyId);
-    
-    if (property.ownerId !== req.user.id) {
-      throw new ForbiddenException('You do not have permission to delete this image');
-    }
-    
-    await this.propertiesService.removeImage(imageId);
-    return { message: 'Image deleted successfully' };
   }
 
   @Post(':id/favorite')

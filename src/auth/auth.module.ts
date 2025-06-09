@@ -1,37 +1,35 @@
 import { Module } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
 import { SequelizeModule } from '@nestjs/sequelize';
+import { User } from '../users/entities/user.entity';
+import { UsersModule } from '../users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { RefreshToken } from './entities/refresh-token.entity';
-import { VerificationToken } from './entities/verification-token.entity';
-import { PasswordResetToken } from './entities/password-reset-token.entity';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { UsersModule } from '../users/users.module';
+import { PassportModule } from '@nestjs/passport';
+import { LocalStrategy } from './strategies/local.strategy';
+import { JwtStrategy } from './strategies/jwt.strategy';
 import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
     SequelizeModule.forFeature([
-      RefreshToken,
-      VerificationToken,
-      PasswordResetToken
+      User,
     ]),
+    UsersModule,
+    PassportModule,
+    MailModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get('JWT_ACCESS_EXPIRATION'),
-        },
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: configService.get<string>('JWT_EXPIRATION') || '1h' },
       }),
       inject: [ConfigService],
     }),
-    UsersModule,
-    MailModule
   ],
   controllers: [AuthController],
-  providers: [AuthService],
-  exports: [AuthService]
+  providers: [AuthService, LocalStrategy, JwtStrategy],
+  exports: [AuthService],
 })
 export class AuthModule {}

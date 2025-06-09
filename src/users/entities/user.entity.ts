@@ -5,31 +5,28 @@ import {
   DataType,
   BeforeCreate,
   BeforeUpdate,
-  HasMany,
   Unique,
   DefaultScope,
   Scopes,
+  UpdatedAt,
+  CreatedAt,
 } from 'sequelize-typescript';
-import * as bcrypt from 'bcrypt';
-import { Property } from '../../properties/entities/property.entity';
-import { Booking } from '../../bookings/entities/booking.entity';
-import { Review } from '../../reviews/entities/review.entity';
-import { Favorite } from '../../properties/entities/favorite.entity';
 
 export enum UserRole {
   TENANT = 'tenant',
   LANDLORD = 'landlord',
 }
 
-@DefaultScope(() => ({
-  attributes: { exclude: ['password'] },
-}))
-@Scopes(() => ({
-  withPassword: {
-    attributes: { include: ['password'] },
-  },
-}))
-@Table
+export enum UserStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  SUSPENDED = 'suspended',
+}
+
+@Table({
+  tableName: 'Users',
+  timestamps: true,
+})
 export class User extends Model {
   @Column({
     type: DataType.UUID,
@@ -41,12 +38,14 @@ export class User extends Model {
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    field: 'first_name',
   })
   firstName: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    field: 'last_name',
   })
   lastName: string;
 
@@ -78,6 +77,7 @@ export class User extends Model {
   @Column({
     type: DataType.STRING,
     allowNull: true,
+    field: 'profile_image',
   })
   profileImage: string;
 
@@ -88,46 +88,38 @@ export class User extends Model {
   bio: string;
 
   @Column({
-    type: DataType.BOOLEAN,
-    defaultValue: false,
+    type: DataType.TEXT,
+    allowNull: true,
+    field: 'auth_access_token',
   })
-  isVerified: boolean;
+  authAccessToken: string;
 
-  @HasMany(() => Property)
-  properties: Property[];
-
-  @HasMany(() => Booking)
-  bookings: Booking[];
-
-  @HasMany(() => Review, {
-    foreignKey: 'reviewerId',
-    as: 'givenReviews',
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+    field: 'auth_refresh_token',
   })
-  givenReviews: Review[];
+  authRefreshToken: string;
 
-  @HasMany(() => Review, {
-    foreignKey: 'reviewedId',
-    as: 'receivedReviews',
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    defaultValue: 'EN',
   })
-  receivedReviews: Review[];
+  language: string;
 
-  @HasMany(() => Favorite)
-  favorites: Favorite[];
+  @Column({
+    type: DataType.ENUM(...Object.values(UserStatus)),
+    allowNull: false,
+    defaultValue: UserStatus.ACTIVE,
+  })
+  status: UserStatus;
 
-  @BeforeCreate
-  @BeforeUpdate
-  static async hashPassword(instance: User) {
-    if (instance.changed('password')) {
-      const salt = await bcrypt.genSalt(10);
-      instance.password = await bcrypt.hash(instance.password, salt);
-    }
-  }
+  @CreatedAt
+  @Column({ field: "created_at" })
+  createdAt: Date;
 
-  async comparePassword(candidatePassword: string): Promise<boolean> {
-    return bcrypt.compare(candidatePassword, this.password);
-  }
-
-  get fullName(): string {
-    return `${this.firstName} ${this.lastName}`;
-  }
+  @UpdatedAt
+  @Column({ field: "updated_at" })
+  updatedAt: Date;
 }

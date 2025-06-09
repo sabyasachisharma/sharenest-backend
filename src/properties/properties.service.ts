@@ -2,7 +2,6 @@ import { Injectable, Inject, NotFoundException, BadRequestException } from '@nes
 import { Op } from 'sequelize';
 import { ConfigService } from '@nestjs/config';
 import { Property, PropertyCategory } from './entities/property.entity';
-import { PropertyImage } from './entities/property-image.entity';
 import { Favorite } from './entities/favorite.entity';
 import { User } from '../users/entities/user.entity';
 import { CreatePropertyDto } from './dto/create-property.dto';
@@ -15,8 +14,6 @@ export class PropertiesService {
   constructor(
     @InjectModel(Property)
     private readonly propertyModel: typeof Property,
-    @InjectModel(PropertyImage)
-    private readonly propertyImageModel: typeof PropertyImage,
     @InjectModel(Favorite)
     private readonly favoriteModel: typeof Favorite,
     private readonly configService: ConfigService,
@@ -33,24 +30,18 @@ export class PropertiesService {
     return this.propertyModel.findAll({
       include: [
         {
-          model: PropertyImage,
-          attributes: ['id', 'url', 'isFeatured'],
-        },
-        {
           model: User,
+          as: 'owner',
           attributes: ['id', 'firstName', 'lastName', 'email'],
         },
       ],
+      order: [['createdAt', 'DESC']],
     });
   }
 
   async findOne(id: string): Promise<Property> {
-    return this.propertyModel.findByPk(id, {
+    const property = await this.propertyModel.findByPk(id, {
       include: [
-        {
-          model: PropertyImage,
-          attributes: ['id', 'url', 'isFeatured', 'displayOrder'],
-        },
         {
           model: User,
           as: 'owner',
@@ -58,26 +49,22 @@ export class PropertiesService {
         },
       ],
     });
+
+    if (!property) {
+      throw new NotFoundException('Property not found');
+    }
+
+    return property;
   }
 
   async update(id: string, updatePropertyDto: UpdatePropertyDto): Promise<Property> {
     const property = await this.findOne(id);
-    
-    if (!property) {
-      throw new NotFoundException('Property not found');
-    }
-    
     await property.update(updatePropertyDto);
     return this.findOne(id);
   }
 
   async remove(id: string): Promise<void> {
     const property = await this.findOne(id);
-    
-    if (!property) {
-      throw new NotFoundException('Property not found');
-    }
-    
     await property.destroy();
   }
 
@@ -155,12 +142,6 @@ export class PropertiesService {
       where: whereClause,
       include: [
         {
-          model: PropertyImage,
-          attributes: ['id', 'url', 'isFeatured'],
-          limit: 1,
-          order: [['isFeatured', 'DESC'], ['displayOrder', 'ASC']],
-        },
-        {
           model: User,
           as: 'owner',
           attributes: ['id', 'firstName', 'lastName'],
@@ -178,12 +159,6 @@ export class PropertiesService {
       where: { isActive: true },
       include: [
         {
-          model: PropertyImage,
-          attributes: ['id', 'url', 'isFeatured'],
-          limit: 1,
-          order: [['isFeatured', 'DESC'], ['displayOrder', 'ASC']],
-        },
-        {
           model: User,
           as: 'owner',
           attributes: ['id', 'firstName', 'lastName'],
@@ -199,90 +174,24 @@ export class PropertiesService {
       where: { ownerId: landlordId },
       include: [
         {
-          model: PropertyImage,
-          attributes: ['id', 'url', 'isFeatured'],
-          limit: 1,
-          order: [['isFeatured', 'DESC'], ['displayOrder', 'ASC']],
+          model: User,
+          as: 'owner',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
         },
       ],
       order: [['createdAt', 'DESC']],
     });
   }
 
-  async addImages(propertyId: string, files: Express.Multer.File[]): Promise<PropertyImage[]> {
-    const property = await this.findOne(propertyId);
-    
-    if (!property) {
-      throw new NotFoundException('Property not found');
-    }
-    
-    const apiUrl = this.configService.get('API_URL');
-    const images: PropertyImage[] = [];
-    
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const imagePath = `${file.path.replace('\\', '/')}`;
-      const imageUrl = `${apiUrl}/${imagePath}`;
-      
-      // Set the first image as featured if no images exist
-      const existingImagesCount = await this.propertyImageModel.count({
-        where: { propertyId },
-      });
-      
-      const image = await this.propertyImageModel.create({
-        propertyId,
-        url: imageUrl,
-        isFeatured: existingImagesCount === 0,
-        displayOrder: existingImagesCount + i,
-      });
-      
-      images.push(image);
-    }
-    
-    return images;
-  }
-
-  async findImage(id: string): Promise<PropertyImage> {
-    return this.propertyImageModel.findByPk(id);
-  }
-
-  async removeImage(id: string): Promise<void> {
-    const image = await this.findImage(id);
-    
-    if (!image) {
-      throw new NotFoundException('Image not found');
-    }
-    
-    // If removing featured image, set another one as featured
-    if (image.isFeatured) {
-      const nextImage = await this.propertyImageModel.findOne({
-        where: {
-          propertyId: image.propertyId,
-          id: { [Op.ne]: id },
-        },
-        order: [['displayOrder', 'ASC']],
-      });
-      
-      if (nextImage) {
-        await nextImage.update({ isFeatured: true });
-      }
-    }
-    
-    await image.destroy();
-  }
-
   async toggleFavorite(userId: string, propertyId: string, isFavorite: boolean): Promise<void> {
-    const property = await this.findOne(propertyId);
-    
-    if (!property) {
-      throw new NotFoundException('Property not found');
-    }
-    
     if (isFavorite) {
+      // Add to favorites
       await this.favoriteModel.findOrCreate({
         where: { userId, propertyId },
+        defaults: { userId, propertyId },
       });
     } else {
+      // Remove from favorites
       await this.favoriteModel.destroy({
         where: { userId, propertyId },
       });
@@ -297,12 +206,6 @@ export class PropertiesService {
           model: Property,
           include: [
             {
-              model: PropertyImage,
-              attributes: ['id', 'url', 'isFeatured'],
-              limit: 1,
-              order: [['isFeatured', 'DESC'], ['displayOrder', 'ASC']],
-            },
-            {
               model: User,
               as: 'owner',
               attributes: ['id', 'firstName', 'lastName'],
@@ -311,7 +214,7 @@ export class PropertiesService {
         },
       ],
     });
-    
+
     return favorites.map(favorite => favorite.property);
   }
 }

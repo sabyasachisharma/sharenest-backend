@@ -6,7 +6,7 @@ module.exports = {
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
       },
-      reviewerId: {
+      reviewer_id: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
@@ -16,19 +16,9 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      reviewedId: {
+      property_id: {
         type: Sequelize.UUID,
-        allowNull: true,
-        references: {
-          model: 'Users',
-          key: 'id',
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE',
-      },
-      propertyId: {
-        type: Sequelize.UUID,
-        allowNull: true,
+        allowNull: false,
         references: {
           model: 'Properties',
           key: 'id',
@@ -36,29 +26,23 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      type: {
-        type: Sequelize.ENUM('property', 'user'),
-        allowNull: false,
-      },
       rating: {
         type: Sequelize.INTEGER,
         allowNull: false,
-        validate: {
-          min: 1,
-          max: 5,
-        },
       },
       comment: {
         type: Sequelize.TEXT,
         allowNull: true,
       },
-      createdAt: {
+      created_at: {
         type: Sequelize.DATE,
         allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
-      updatedAt: {
+      updated_at: {
         type: Sequelize.DATE,
         allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
       },
     });
   },

@@ -6,11 +6,11 @@ module.exports = {
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
       },
-      firstName: {
+      first_name: {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      lastName: {
+      last_name: {
         type: Sequelize.STRING,
         allowNull: false,
       },
@@ -31,7 +31,7 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true,
       },
-      profileImage: {
+      profile_image: {
         type: Sequelize.STRING,
         allowNull: true,
       },
@@ -39,15 +39,29 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true,
       },
-      isVerified: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false,
+      auth_access_token: {
+        type: Sequelize.TEXT,
+        allowNull: true,
       },
-      createdAt: {
+      auth_refresh_token: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
+      language: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        defaultValue: 'EN',
+      },
+      status: {
+        type: Sequelize.ENUM('active', 'inactive', 'suspended'),
+        allowNull: false,
+        defaultValue: 'active',
+      },
+      created_at: {
         type: Sequelize.DATE,
         allowNull: false,
       },
-      updatedAt: {
+      updated_at: {
         type: Sequelize.DATE,
         allowNull: false,
       },

@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   Param,
   Delete,
@@ -9,14 +10,11 @@ import {
   Request,
   NotFoundException,
   ForbiddenException,
-  BadRequestException,
-  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { ReviewType } from './entities/review.entity';
 
 @ApiTags('reviews')
 @Controller('reviews')
@@ -26,91 +24,82 @@ export class ReviewsController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a review' })
-  @ApiResponse({ status: 201, description: 'Review has been created' })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiOperation({ summary: 'Create a property review' })
+  @ApiResponse({ status: 201, description: 'Review has been created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async create(@Request() req, @Body() createReviewDto: CreateReviewDto) {
     const reviewerId = req.user.id;
-    
-    // Validate required fields based on type
-    if (createReviewDto.type === ReviewType.PROPERTY && !createReviewDto.propertyId) {
-      throw new BadRequestException('Property ID is required for property reviews');
-    } else if (createReviewDto.type === ReviewType.USER && !createReviewDto.reviewedId) {
-      throw new BadRequestException('Reviewed user ID is required for user reviews');
-    }
-    
-    // Check if reviewer has permission to review
-    const canReview = await this.reviewsService.canCreateReview(
-      reviewerId,
-      createReviewDto.type,
-      createReviewDto.propertyId,
-      createReviewDto.reviewedId,
-    );
-    
-    if (!canReview) {
-      throw new ForbiddenException('You cannot review this property or user');
-    }
-    
-    // Check if user has already reviewed
-    const hasReviewed = await this.reviewsService.hasAlreadyReviewed(
-      reviewerId,
-      createReviewDto.type,
-      createReviewDto.propertyId,
-      createReviewDto.reviewedId,
-    );
-    
-    if (hasReviewed) {
-      throw new BadRequestException('You have already reviewed this property or user');
-    }
-    
     return this.reviewsService.create(createReviewDto, reviewerId);
   }
 
+  @Get()
+  @ApiOperation({ summary: 'Get all reviews' })
+  @ApiResponse({ status: 200, description: 'Return all reviews' })
+  async findAll() {
+    return this.reviewsService.findAll();
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a review by ID' })
+  @ApiResponse({ status: 200, description: 'Return the review' })
+  @ApiResponse({ status: 404, description: 'Review not found' })
+  async findOne(@Param('id') id: string) {
+    return this.reviewsService.findOne(id);
+  }
+
   @Get('property/:propertyId')
-  @ApiOperation({ summary: 'Get reviews for a property' })
-  @ApiResponse({ status: 200, description: 'Return the property reviews' })
-  @ApiResponse({ status: 404, description: 'Property not found' })
-  async findPropertyReviews(@Param('propertyId') propertyId: string) {
-    return this.reviewsService.findPropertyReviews(propertyId);
+  @ApiOperation({ summary: 'Get all reviews for a property' })
+  @ApiResponse({ status: 200, description: 'Return property reviews' })
+  async findByProperty(@Param('propertyId') propertyId: string) {
+    return this.reviewsService.findByProperty(propertyId);
   }
 
   @Get('user/:userId')
-  @ApiOperation({ summary: 'Get reviews for a user' })
-  @ApiResponse({ status: 200, description: 'Return the user reviews' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async findUserReviews(@Param('userId') userId: string) {
-    return this.reviewsService.findUserReviews(userId);
+  @ApiOperation({ summary: 'Get all reviews by a user' })
+  @ApiResponse({ status: 200, description: 'Return user reviews' })
+  async findByUser(@Param('userId') userId: string) {
+    return this.reviewsService.findByUser(userId);
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a review' })
+  @ApiResponse({ status: 200, description: 'Review has been updated successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - not your review' })
+  @ApiResponse({ status: 404, description: 'Review not found' })
+  async update(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() updateReviewDto: Partial<CreateReviewDto>
+  ) {
+    const reviewerId = req.user.id;
+    const review = await this.reviewsService.findOne(id);
+    
+    if (review.reviewerId !== reviewerId) {
+      throw new ForbiddenException('You can only update your own reviews');
+    }
+    
+    return this.reviewsService.update(id, updateReviewDto);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a review' })
-  @ApiResponse({ status: 200, description: 'Review has been deleted' })
-  @ApiResponse({ status: 403, description: 'Forbidden resource' })
+  @ApiResponse({ status: 200, description: 'Review has been deleted successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - not your review' })
   @ApiResponse({ status: 404, description: 'Review not found' })
   async remove(@Request() req, @Param('id') id: string) {
     const reviewerId = req.user.id;
     const review = await this.reviewsService.findOne(id);
     
-    if (!review) {
-      throw new NotFoundException('Review not found');
-    }
-    
     if (review.reviewerId !== reviewerId) {
-      throw new ForbiddenException('You do not have permission to delete this review');
+      throw new ForbiddenException('You can only delete your own reviews');
     }
     
     await this.reviewsService.remove(id);
     return { message: 'Review deleted successfully' };
-  }
-
-  @Get('user/me/pending')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get pending reviews for the current user' })
-  @ApiResponse({ status: 200, description: 'Return pending reviews' })
-  async getPendingReviews(@Request() req) {
-    return this.reviewsService.getPendingReviewsForUser(req.user.id);
   }
 }
