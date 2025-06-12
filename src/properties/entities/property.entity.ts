@@ -8,11 +8,11 @@ import {
   HasMany,
   CreatedAt,
   UpdatedAt,
-} from 'sequelize-typescript';
-import { User } from '../../users/entities/user.entity';
-import { Booking } from '../../bookings/entities/booking.entity';
-import { Review } from '../../reviews/entities/review.entity';
-import { Favorite } from './favorite.entity';
+} from 'sequelize-typescript'
+import { User } from '../../users/entities/user.entity'
+import { Booking } from '../../bookings/entities/booking.entity'
+import { Review } from '../../reviews/entities/review.entity'
+import { Favorite } from './favorite.entity'
 
 export enum PropertyCategory {
   SHARED_FLAT = 'shared_flat',
@@ -30,7 +30,7 @@ export class Property extends Model {
     defaultValue: DataType.UUIDV4,
     primaryKey: true,
   })
-  id: string;
+  id: string
 
   @ForeignKey(() => User)
   @Column({
@@ -38,145 +38,145 @@ export class Property extends Model {
     allowNull: false,
     field: 'owner_id',
   })
-  ownerId: string;
+  ownerId: string
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
-  title: string;
+  title: string
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
     unique: true,
   })
-  slug: string;
+  slug: string
 
   @Column({
     type: DataType.TEXT,
     allowNull: false,
   })
-  description: string;
+  description: string
 
   @Column({
     type: DataType.ENUM(...Object.values(PropertyCategory)),
     allowNull: false,
   })
-  category: PropertyCategory;
+  category: PropertyCategory
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
-  city: string;
+  city: string
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
-  postcode: string;
+  postcode: string
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
-  address: string;
+  address: string
 
   @Column({
     type: DataType.DECIMAL(8, 6),
     allowNull: true,
   })
-  latitude: number;
+  latitude: number
 
   @Column({
     type: DataType.DECIMAL(9, 6),
     allowNull: true,
   })
-  longitude: number;
+  longitude: number
 
   @Column({
     type: DataType.DECIMAL(10, 2),
     allowNull: false,
   })
-  price: number;
+  price: number
 
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
   })
-  bedrooms: number;
+  bedrooms: number
 
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
   })
-  bathrooms: number;
+  bathrooms: number
 
   @Column({
     type: DataType.INTEGER,
     allowNull: true,
   })
-  size: number;
+  size: number
 
   @Column({
     type: DataType.JSON,
     allowNull: true,
   })
-  amenities: string[];
+  amenities: string[]
 
   @Column({
     type: DataType.STRING,
     allowNull: true,
     field: 'image_url',
   })
-  imageUrl: string;
+  imageUrl: string
 
   @Column({
     type: DataType.DATE,
     allowNull: false,
     field: 'available_from',
   })
-  availableFrom: Date;
+  availableFrom: Date
 
   @Column({
     type: DataType.DATE,
     allowNull: true,
     field: 'available_to',
   })
-  availableTo: Date;
+  availableTo: Date
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: true,
     field: 'is_available',
   })
-  isAvailable: boolean;
+  isAvailable: boolean
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: true,
     field: 'is_active',
   })
-  isActive: boolean;
+  isActive: boolean
 
   @CreatedAt
   @Column({ field: "created_at" })
-  createdAt: Date;
+  createdAt: Date
 
   @UpdatedAt
   @Column({ field: "updated_at" })
-  updatedAt: Date;
+  updatedAt: Date
 
   @BelongsTo(() => User)
-  owner: User;
+  owner: User
 
   @HasMany(() => Booking)
-  bookings: Booking[];
+  bookings: Booking[]
 
   @HasMany(() => Review)
-  reviews: Review[];
+  reviews: Review[]
 
   @HasMany(() => Favorite)
-  favorites: Favorite[];
+  favorites: Favorite[]
 }

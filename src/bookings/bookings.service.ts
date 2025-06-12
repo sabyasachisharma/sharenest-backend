@@ -1,13 +1,13 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
-import { Op } from 'sequelize';
-import { Booking, BookingStatus } from './entities/booking.entity';
-import { Property } from '../properties/entities/property.entity';
-import { User } from '../users/entities/user.entity';
-import { CreateBookingDto } from './dto/create-booking.dto';
-import { PropertiesService } from '../properties/properties.service';
-import { UsersService } from '../users/users.service';
-import { MailService } from '../mail/mail.service';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
+import { InjectModel } from '@nestjs/sequelize'
+import { Op } from 'sequelize'
+import { Booking, BookingStatus } from './entities/booking.entity'
+import { Property } from '../properties/entities/property.entity'
+import { User } from '../users/entities/user.entity'
+import { CreateBookingDto } from './dto/create-booking.dto'
+import { PropertiesService } from '../properties/properties.service'
+import { UsersService } from '../users/users.service'
+import { MailService } from '../mail/mail.service'
 
 @Injectable()
 export class BookingsService {
@@ -20,27 +20,27 @@ export class BookingsService {
   ) {}
 
   async create(createBookingDto: CreateBookingDto, tenantId: string): Promise<Booking> {
-    const property = await this.propertiesService.findOne(createBookingDto.propertyId);
+    const property = await this.propertiesService.findOne(createBookingDto.propertyId)
     
     if (!property) {
-      throw new NotFoundException('Property not found');
+      throw new NotFoundException('Property not found')
     }
     
     if (!property.isActive) {
-      throw new BadRequestException('Property is not available for booking');
+      throw new BadRequestException('Property is not available for booking')
     }
     
     // Check if dates are valid
-    const startDate = new Date(createBookingDto.startDate);
-    const endDate = new Date(createBookingDto.endDate);
-    const today = new Date();
+    const startDate = new Date(createBookingDto.startDate)
+    const endDate = new Date(createBookingDto.endDate)
+    const today = new Date()
     
     if (startDate < today) {
-      throw new BadRequestException('Start date cannot be in the past');
+      throw new BadRequestException('Start date cannot be in the past')
     }
     
     if (endDate <= startDate) {
-      throw new BadRequestException('End date must be after start date');
+      throw new BadRequestException('End date must be after start date')
     }
     
     // Check for overlapping bookings
@@ -69,10 +69,10 @@ export class BookingsService {
           },
         ],
       },
-    });
+    })
     
     if (overlappingBookings.length > 0) {
-      throw new BadRequestException('Property is not available for the selected dates');
+      throw new BadRequestException('Property is not available for the selected dates')
     }
     
     // Create booking
@@ -80,16 +80,16 @@ export class BookingsService {
       ...createBookingDto,
       tenantId,
       status: BookingStatus.PENDING,
-    });
+    })
     
     // Send notification emails
-    const tenant = await this.usersService.findOne(tenantId);
-    const landlord = await this.usersService.findOne(property.ownerId);
+    const tenant = await this.usersService.findOne(tenantId)
+    const landlord = await this.usersService.findOne(property.ownerId)
     
     const dateRange = {
       from: startDate.toISOString().split('T')[0],
       to: endDate.toISOString().split('T')[0],
-    };
+    }
 
     await this.mailService.sendBookingRequestNotification(
       landlord.email,
@@ -98,7 +98,7 @@ export class BookingsService {
       property.title,
       dateRange,
       null // bookingViewUrl parameter
-    );
+    )
     
     await this.mailService.sendBookingStatusUpdate(
       tenant.email,
@@ -107,9 +107,9 @@ export class BookingsService {
       'approved',
       dateRange,
       null // bookingViewUrl parameter
-    );
+    )
     
-    return booking;
+    return booking
   }
 
   async findAll(): Promise<Booking[]> {
@@ -132,7 +132,7 @@ export class BookingsService {
           attributes: ['id', 'firstName', 'lastName', 'email'],
         },
       ],
-    });
+    })
   }
 
   async findOne(id: string): Promise<Booking> {
@@ -155,19 +155,19 @@ export class BookingsService {
           attributes: ['id', 'firstName', 'lastName', 'email'],
         },
       ],
-    });
+    })
     
     if (!booking) {
-      throw new NotFoundException('Booking not found');
+      throw new NotFoundException('Booking not found')
     }
     
-    return booking;
+    return booking
   }
 
   async findUserBookings(userId: string, role: string): Promise<Booking[]> {
     const whereClause = role === 'tenant'
       ? { tenantId: userId }
-      : { '$property.ownerId$': userId };
+      : { '$property.ownerId$': userId }
     
     return this.bookingModel.findAll({
       where: whereClause,
@@ -190,26 +190,26 @@ export class BookingsService {
         },
       ],
       order: [['createdAt', 'DESC']],
-    });
+    })
   }
 
   async updateStatus(id: string, status: BookingStatus): Promise<Booking> {
-    const booking = await this.findOne(id);
+    const booking = await this.findOne(id)
     
     if (booking.status === status) {
-      return booking;
+      return booking
     }
     
-    await booking.update({ status });
+    await booking.update({ status })
     
     // Send notification emails based on status
-    const tenant = await this.usersService.findOne(booking.tenantId);
-    const property = await this.propertiesService.findOne(booking.propertyId);
+    const tenant = await this.usersService.findOne(booking.tenantId)
+    const property = await this.propertiesService.findOne(booking.propertyId)
     
     const dateRange = {
       from: booking.startDate.toISOString().split('T')[0],
       to: booking.endDate.toISOString().split('T')[0],
-    };
+    }
 
     await this.mailService.sendBookingStatusUpdate(
       tenant.email,
@@ -218,13 +218,13 @@ export class BookingsService {
       status.toLowerCase() as 'approved' | 'rejected',
       dateRange,
       null // bookingViewUrl parameter
-    );
+    )
     
-    return this.findOne(id);
+    return this.findOne(id)
   }
 
   async remove(id: string): Promise<void> {
-    const booking = await this.findOne(id);
-    await booking.destroy();
+    const booking = await this.findOne(id)
+    await booking.destroy()
   }
 }

@@ -7,9 +7,9 @@ import {
   BelongsTo,
   CreatedAt,
   UpdatedAt,
-} from 'sequelize-typescript';
-import { User } from '../../users/entities/user.entity';
-import { Property } from '../../properties/entities/property.entity';
+} from 'sequelize-typescript'
+import { User } from '../../users/entities/user.entity'
+import { Property } from '../../properties/entities/property.entity'
 
 @Table({
   tableName: 'Reviews',
@@ -21,7 +21,7 @@ export class Review extends Model {
     defaultValue: DataType.UUIDV4,
     primaryKey: true,
   })
-  id: string;
+  id: string
 
   @ForeignKey(() => User)
   @Column({
@@ -29,7 +29,7 @@ export class Review extends Model {
     allowNull: false,
     field: 'reviewer_id',
   })
-  reviewerId: string;
+  reviewerId: string
 
   @ForeignKey(() => Property)
   @Column({
@@ -37,7 +37,7 @@ export class Review extends Model {
     allowNull: false,
     field: 'property_id',
   })
-  propertyId: string;
+  propertyId: string
 
   @Column({
     type: DataType.INTEGER,
@@ -47,26 +47,26 @@ export class Review extends Model {
       max: 5,
     },
   })
-  rating: number;
+  rating: number
 
   @Column({
     type: DataType.TEXT,
     allowNull: true,
   })
-  comment: string;
+  comment: string
 
   @CreatedAt
   @Column({ field: "created_at" })
-  createdAt: Date;
+  createdAt: Date
 
   @UpdatedAt
   @Column({ field: "updated_at" })
-  updatedAt: Date;
+  updatedAt: Date
 
   // Relationships
   @BelongsTo(() => User, { foreignKey: 'reviewerId', as: 'reviewer' })
-  reviewer: User;
+  reviewer: User
 
   @BelongsTo(() => Property)
-  property: Property;
+  property: Property
 }

@@ -1,24 +1,24 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { SequelizeModule } from '@nestjs/sequelize';
-import { MulterModule } from '@nestjs/platform-express';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
+import { Module } from '@nestjs/common'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import { SequelizeModule } from '@nestjs/sequelize'
+import { MulterModule } from '@nestjs/platform-express'
+import { ServeStaticModule } from '@nestjs/serve-static'
+import { join } from 'path'
 
 // Entity imports
-import { User } from './users/entities/user.entity';
-import { Property } from './properties/entities/property.entity';
-import { Favorite } from './properties/entities/favorite.entity';
-import { Booking } from './bookings/entities/booking.entity';
-import { Review } from './reviews/entities/review.entity';
+import { User } from './users/entities/user.entity'
+import { Property } from './properties/entities/property.entity'
+import { Favorite } from './properties/entities/favorite.entity'
+import { Booking } from './bookings/entities/booking.entity'
+import { Review } from './reviews/entities/review.entity'
 
 // Module imports
-import { UsersModule } from './users/users.module';
-import { AuthModule } from './auth/auth.module';
-import { PropertiesModule } from './properties/properties.module';
-import { BookingsModule } from './bookings/bookings.module';
-import { ReviewsModule } from './reviews/reviews.module';
-import { MailModule } from './mail/mail.module';
+import { UsersModule } from './users/users.module'
+import { AuthModule } from './auth/auth.module'
+import { PropertiesModule } from './properties/properties.module'
+import { BookingsModule } from './bookings/bookings.module'
+import { ReviewsModule } from './reviews/reviews.module'
+import { MailModule } from './mail/mail.module'
 
 @Module({
   imports: [

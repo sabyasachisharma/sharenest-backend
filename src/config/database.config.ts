@@ -1,4 +1,4 @@
-import { registerAs } from '@nestjs/config';
+import { registerAs } from '@nestjs/config'
 
 export default registerAs('database', () => ({
   dialect: 'mysql',
@@ -17,4 +17,4 @@ export default registerAs('database', () => ({
     timestamps: true,
     underscored: true,
   }
-})); 
+})) 

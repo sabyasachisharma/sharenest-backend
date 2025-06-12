@@ -10,7 +10,7 @@ import {
   Scopes,
   UpdatedAt,
   CreatedAt,
-} from 'sequelize-typescript';
+} from 'sequelize-typescript'
 
 export enum UserRole {
   TENANT = 'tenant',
@@ -33,93 +33,93 @@ export class User extends Model {
     defaultValue: DataType.UUIDV4,
     primaryKey: true,
   })
-  id: string;
+  id: string
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
     field: 'first_name',
   })
-  firstName: string;
+  firstName: string
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
     field: 'last_name',
   })
-  lastName: string;
+  lastName: string
 
   @Unique
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
-  email: string;
+  email: string
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
-  password: string;
+  password: string
 
   @Column({
     type: DataType.ENUM(...Object.values(UserRole)),
     allowNull: false,
   })
-  role: UserRole;
+  role: UserRole
 
   @Column({
     type: DataType.STRING,
     allowNull: true,
   })
-  phone: string;
+  phone: string
 
   @Column({
     type: DataType.STRING,
     allowNull: true,
     field: 'profile_image',
   })
-  profileImage: string;
+  profileImage: string
 
   @Column({
     type: DataType.TEXT,
     allowNull: true,
   })
-  bio: string;
+  bio: string
 
   @Column({
     type: DataType.TEXT,
     allowNull: true,
     field: 'auth_access_token',
   })
-  authAccessToken: string;
+  authAccessToken: string
 
   @Column({
     type: DataType.TEXT,
     allowNull: true,
     field: 'auth_refresh_token',
   })
-  authRefreshToken: string;
+  authRefreshToken: string
 
   @Column({
     type: DataType.STRING,
     allowNull: true,
     defaultValue: 'EN',
   })
-  language: string;
+  language: string
 
   @Column({
     type: DataType.ENUM(...Object.values(UserStatus)),
     allowNull: false,
     defaultValue: UserStatus.ACTIVE,
   })
-  status: UserStatus;
+  status: UserStatus
 
   @CreatedAt
   @Column({ field: "created_at" })
-  createdAt: Date;
+  createdAt: Date
 
   @UpdatedAt
   @Column({ field: "updated_at" })
-  updatedAt: Date;
+  updatedAt: Date
 }

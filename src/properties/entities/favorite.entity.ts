@@ -7,9 +7,9 @@ import {
   BelongsTo,
   CreatedAt,
   UpdatedAt,
-} from 'sequelize-typescript';
-import { User } from '../../users/entities/user.entity';
-import { Property } from './property.entity';
+} from 'sequelize-typescript'
+import { User } from '../../users/entities/user.entity'
+import { Property } from './property.entity'
 
 @Table({
   tableName: 'Favorites',
@@ -22,7 +22,7 @@ export class Favorite extends Model {
     primaryKey: true,
     field: 'user_id',
   })
-  userId: string;
+  userId: string
 
   @ForeignKey(() => Property)
   @Column({
@@ -30,20 +30,20 @@ export class Favorite extends Model {
     primaryKey: true,
     field: 'property_id',
   })
-  propertyId: string;
+  propertyId: string
 
   @CreatedAt
   @Column({ field: "created_at" })
-  createdAt: Date;
+  createdAt: Date
 
   @UpdatedAt
   @Column({ field: "updated_at" })
-  updatedAt: Date;
+  updatedAt: Date
 
   // Relationships
   @BelongsTo(() => User)
-  user: User;
+  user: User
 
   @BelongsTo(() => Property)
-  property: Property;
+  property: Property
 }

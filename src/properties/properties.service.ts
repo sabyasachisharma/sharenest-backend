@@ -1,13 +1,13 @@
-import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Op } from 'sequelize';
-import { ConfigService } from '@nestjs/config';
-import { Property, PropertyCategory } from './entities/property.entity';
-import { Favorite } from './entities/favorite.entity';
-import { User } from '../users/entities/user.entity';
-import { CreatePropertyDto } from './dto/create-property.dto';
-import { UpdatePropertyDto } from './dto/update-property.dto';
-import { PropertySearchDto } from './dto/property-search.dto';
-import { InjectModel } from '@nestjs/sequelize';
+import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common'
+import { Op } from 'sequelize'
+import { ConfigService } from '@nestjs/config'
+import { Property, PropertyCategory } from './entities/property.entity'
+import { Favorite } from './entities/favorite.entity'
+import { User } from '../users/entities/user.entity'
+import { CreatePropertyDto } from './dto/create-property.dto'
+import { UpdatePropertyDto } from './dto/update-property.dto'
+import { PropertySearchDto } from './dto/property-search.dto'
+import { InjectModel } from '@nestjs/sequelize'
 
 @Injectable()
 export class PropertiesService {
@@ -23,7 +23,7 @@ export class PropertiesService {
     return this.propertyModel.create({
       ...createPropertyDto,
       ownerId,
-    });
+    })
   }
 
   async findAll(): Promise<Property[]> {
@@ -36,7 +36,7 @@ export class PropertiesService {
         },
       ],
       order: [['createdAt', 'DESC']],
-    });
+    })
   }
 
   async findOne(id: string): Promise<Property> {
@@ -48,27 +48,27 @@ export class PropertiesService {
           attributes: ['id', 'firstName', 'lastName', 'email', 'profileImage'],
         },
       ],
-    });
+    })
 
     if (!property) {
-      throw new NotFoundException('Property not found');
+      throw new NotFoundException('Property not found')
     }
 
-    return property;
+    return property
   }
 
   async update(id: string, updatePropertyDto: UpdatePropertyDto): Promise<Property> {
-    const property = await this.findOne(id);
-    await property.update(updatePropertyDto);
-    return this.findOne(id);
+    const property = await this.findOne(id)
+    await property.update(updatePropertyDto)
+    return this.findOne(id)
   }
 
   async remove(id: string): Promise<void> {
-    const property = await this.findOne(id);
-    await property.destroy();
+    const property = await this.findOne(id)
+    await property.destroy()
   }
 
-  async search(searchDto: PropertySearchDto): Promise<{ count: number; rows: Property[] }> {
+  async search(searchDto: PropertySearchDto): Promise<{ count: number rows: Property[] }> {
     const {
       query,
       category,
@@ -82,51 +82,51 @@ export class PropertiesService {
       availableTo,
       page = 1,
       limit = 10,
-    } = searchDto;
+    } = searchDto
 
-    const offset = (page - 1) * limit;
+    const offset = (page - 1) * limit
     
     const whereClause: any = {
       isActive: true,
-    };
+    }
     
     if (query) {
       whereClause[Op.or] = [
         { title: { [Op.iLike]: `%${query}%` } },
         { description: { [Op.iLike]: `%${query}%` } },
-      ];
+      ]
     }
     
     if (category) {
-      whereClause.category = category;
+      whereClause.category = category
     }
     
     if (city) {
-      whereClause.city = { [Op.iLike]: `%${city}%` };
+      whereClause.city = { [Op.iLike]: `%${city}%` }
     }
     
     if (postcode) {
-      whereClause.postcode = { [Op.iLike]: `%${postcode}%` };
+      whereClause.postcode = { [Op.iLike]: `%${postcode}%` }
     }
     
     if (minPrice) {
-      whereClause.price = { ...whereClause.price, [Op.gte]: minPrice };
+      whereClause.price = { ...whereClause.price, [Op.gte]: minPrice }
     }
     
     if (maxPrice) {
-      whereClause.price = { ...whereClause.price, [Op.lte]: maxPrice };
+      whereClause.price = { ...whereClause.price, [Op.lte]: maxPrice }
     }
     
     if (minBedrooms) {
-      whereClause.bedrooms = { [Op.gte]: minBedrooms };
+      whereClause.bedrooms = { [Op.gte]: minBedrooms }
     }
     
     if (minBathrooms) {
-      whereClause.bathrooms = { [Op.gte]: minBathrooms };
+      whereClause.bathrooms = { [Op.gte]: minBathrooms }
     }
     
     if (availableFrom) {
-      whereClause.availableFrom = { [Op.lte]: new Date(availableFrom) };
+      whereClause.availableFrom = { [Op.lte]: new Date(availableFrom) }
     }
     
     if (availableTo) {
@@ -135,7 +135,7 @@ export class PropertiesService {
           { [Op.gte]: new Date(availableTo) },
           { [Op.eq]: null },
         ],
-      };
+      }
     }
     
     return this.propertyModel.findAndCountAll({
@@ -151,7 +151,7 @@ export class PropertiesService {
       offset,
       distinct: true,
       order: [['createdAt', 'DESC']],
-    });
+    })
   }
 
   async getFeatured(): Promise<Property[]> {
@@ -166,7 +166,7 @@ export class PropertiesService {
       ],
       limit: 6,
       order: [['createdAt', 'DESC']],
-    });
+    })
   }
 
   async getLandlordProperties(landlordId: string): Promise<Property[]> {
@@ -180,7 +180,7 @@ export class PropertiesService {
         },
       ],
       order: [['createdAt', 'DESC']],
-    });
+    })
   }
 
   async toggleFavorite(userId: string, propertyId: string, isFavorite: boolean): Promise<void> {
@@ -189,12 +189,12 @@ export class PropertiesService {
       await this.favoriteModel.findOrCreate({
         where: { userId, propertyId },
         defaults: { userId, propertyId },
-      });
+      })
     } else {
       // Remove from favorites
       await this.favoriteModel.destroy({
         where: { userId, propertyId },
-      });
+      })
     }
   }
 
@@ -213,8 +213,8 @@ export class PropertiesService {
           ],
         },
       ],
-    });
+    })
 
-    return favorites.map(favorite => favorite.property);
+    return favorites.map(favorite => favorite.property)
   }
 }

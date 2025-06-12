@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsInt, IsUUID, Min, Max, IsString, IsOptional } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger'
+import { IsNotEmpty, IsInt, IsUUID, Min, Max, IsString, IsOptional } from 'class-validator'
 
 export class CreateReviewDto {
   @ApiProperty({ 
@@ -8,7 +8,7 @@ export class CreateReviewDto {
   })
   @IsNotEmpty()
   @IsUUID(4)
-  propertyId: string;
+  propertyId: string
 
   @ApiProperty({ 
     example: 4, 
@@ -20,7 +20,7 @@ export class CreateReviewDto {
   @IsInt()
   @Min(1)
   @Max(5)
-  rating: number;
+  rating: number
 
   @ApiProperty({ 
     example: 'Great experience! The property was clean and well-maintained.',
@@ -29,5 +29,5 @@ export class CreateReviewDto {
   })
   @IsOptional()
   @IsString()
-  comment?: string;
+  comment?: string
 }

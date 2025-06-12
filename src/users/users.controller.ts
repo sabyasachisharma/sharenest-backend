@@ -11,13 +11,13 @@ import {
   Post,
   UseInterceptors,
   UploadedFile,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { UsersService } from './users.service';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+} from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { UsersService } from './users.service'
+import { UpdateUserDto } from './dto/update-user.dto'
+import { ChangePasswordDto } from './dto/change-password.dto'
+import { FileInterceptor } from '@nestjs/platform-express'
 
 @ApiTags('users')
 @Controller('users')
@@ -30,7 +30,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'Return all users' })
   async findAll() {
-    return this.usersService.findAll();
+    return this.usersService.findAll()
   }
 
   @Get('profile')
@@ -39,7 +39,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'Return the user profile' })
   async getProfile(@Request() req) {
-    return req.user;
+    return req.user
   }
 
   @Get(':id')
@@ -49,11 +49,11 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Return the user' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async findOne(@Param('id') id: string) {
-    const user = await this.usersService.findOne(id);
+    const user = await this.usersService.findOne(id)
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('User not found')
     }
-    return user;
+    return user
   }
 
   @Put('profile')
@@ -62,7 +62,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Update current user profile' })
   @ApiResponse({ status: 200, description: 'User has been updated' })
   async updateProfile(@Request() req, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(req.user.id, updateUserDto);
+    return this.usersService.update(req.user.id, updateUserDto)
   }
 
   @Post('profile/upload-image')
@@ -73,10 +73,10 @@ export class UsersController {
   @UseInterceptors(FileInterceptor('profileImage'))
   async uploadProfileImage(@Request() req, @UploadedFile() file) {
     if (!file) {
-      throw new BadRequestException('No file uploaded');
+      throw new BadRequestException('No file uploaded')
     }
     
-    return this.usersService.updateProfileImage(req.user.id, file);
+    return this.usersService.updateProfileImage(req.user.id, file)
   }
 
   @Post('change-password')
@@ -90,12 +90,12 @@ export class UsersController {
       req.user.id,
       changePasswordDto.currentPassword,
       changePasswordDto.newPassword,
-    );
+    )
     
     if (!result) {
-      throw new BadRequestException('Current password is incorrect');
+      throw new BadRequestException('Current password is incorrect')
     }
     
-    return { message: 'Password has been changed successfully' };
+    return { message: 'Password has been changed successfully' }
   }
 }

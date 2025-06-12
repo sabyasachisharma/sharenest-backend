@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config()
 
 module.exports = {
   LOCAL: {
@@ -33,4 +33,4 @@ module.exports = {
     port: process.env.MYSQL_PORT,
     dialect: "mysql",
   },
-};
+}

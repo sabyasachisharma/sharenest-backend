@@ -8,16 +8,16 @@ import {
   Get,
   BadRequestException,
   Response,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { Response as ExpressResponse } from 'express';
-import { AuthService, ApplicationTypeEnum } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
+} from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { Response as ExpressResponse } from 'express'
+import { AuthService, ApplicationTypeEnum } from './auth.service'
+import { RegisterDto } from './dto/register.dto'
+import { LoginDto } from './dto/login.dto'
+import { RefreshTokenDto } from './dto/refresh-token.dto'
+import { ForgotPasswordDto } from './dto/forgot-password.dto'
+import { ResetPasswordDto } from './dto/reset-password.dto'
+import { JwtAuthGuard } from './guards/jwt-auth.guard'
 
 @ApiTags('auth')
 @Controller('auth')
@@ -29,11 +29,11 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'User has been created and tokens issued' })
   @ApiResponse({ status: 400, description: 'Invalid input or email already exists' })
   async register(@Body() registerDto: RegisterDto) {
-    const result = await this.authService.register(registerDto);
+    const result = await this.authService.register(registerDto)
     return {
       message: 'User registered successfully',
       ...result,
-    };
+    }
   }
 
   @Post('login')
@@ -45,29 +45,28 @@ export class AuthController {
     @Response({ passthrough: true }) response: ExpressResponse,
     @Body() loginDto: LoginDto
   ) {
-    const applicationType = loginDto.application || ApplicationTypeEnum.WEB_APP;
-    const result = await this.authService.login(response, loginDto, applicationType);
+    const applicationType = loginDto.application || ApplicationTypeEnum.WEB_APP
+    const result = await this.authService.login(response, loginDto, applicationType)
     return {
       message: 'Login successful',
       ...result,
-    };
+    }
   }
 
-  // 🔁 Refresh access token using refresh token
   @Post('refresh-token')
   @HttpCode(200)
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'New access token generated' })
   @ApiResponse({ status: 400, description: 'Invalid or expired refresh token' })
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
-    const result = await this.authService.refreshToken(refreshTokenDto.refreshToken);
+    const result = await this.authService.refreshToken(refreshTokenDto.refreshToken)
     if (!result) {
-      throw new BadRequestException('Invalid refresh token');
+      throw new BadRequestException('Invalid refresh token')
     }
     return {
       message: 'Access token refreshed',
       ...result,
-    };
+    }
   }
 
   // 🚪 Logout user (revoke refresh token)
@@ -77,8 +76,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Log out user' })
   @ApiResponse({ status: 200, description: 'User logged out and tokens invalidated' })
   async logout(@Request() req) {
-    await this.authService.logout(req.user.id);
-    return { message: 'Logged out successfully' };
+    await this.authService.logout(req.user.id)
+    return { message: 'Logged out successfully' }
   }
 
   // 🔑 Forgot password request
@@ -87,10 +86,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Send password reset email' })
   @ApiResponse({ status: 200, description: 'If email is registered, reset link is sent' })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    await this.authService.generatePasswordResetToken(forgotPasswordDto.email);
+    await this.authService.generatePasswordResetToken(forgotPasswordDto.email)
     return {
       message: 'If your email is registered, a reset link has been sent',
-    };
+    }
   }
 
   // 🔐 Reset password with token
@@ -103,13 +102,13 @@ export class AuthController {
     const success = await this.authService.resetPassword(
       resetPasswordDto.token,
       resetPasswordDto.newPassword,
-    );
+    )
 
     if (!success) {
-      throw new BadRequestException('Invalid or expired reset token');
+      throw new BadRequestException('Invalid or expired reset token')
     }
 
-    return { message: 'Password has been reset successfully' };
+    return { message: 'Password has been reset successfully' }
   }
 
   // 👤 Get current authenticated user
@@ -119,7 +118,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Returns user info' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getProfile(@Request() req) {
-    return req.user;
+    return req.user
   }
 
   // ⚙️ Health check endpoint
@@ -127,6 +126,6 @@ export class AuthController {
   @ApiOperation({ summary: 'Check server health' })
   @ApiResponse({ status: 200, description: 'Server is operational' })
   async healthCheck() {
-    return { status: 'ok' };
+    return { status: 'ok' }
   }
 }

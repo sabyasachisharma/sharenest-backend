@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsBoolean, IsOptional, IsEnum } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger'
+import { IsEmail, IsNotEmpty, IsBoolean, IsOptional, IsEnum } from 'class-validator'
 
 export enum ApplicationTypeEnum {
   MOBILE_APP = 'mobile_app',
@@ -10,16 +10,16 @@ export class LoginDto {
   @ApiProperty({ example: 'john.doe@example.com' })
   @IsNotEmpty()
   @IsEmail()
-  email: string;
+  email: string
 
   @ApiProperty({ example: 'Password123!' })
   @IsNotEmpty()
-  password: string;
+  password: string
 
   @ApiProperty({ example: true, required: false, default: false })
   @IsOptional()
   @IsBoolean()
-  rememberMe?: boolean;
+  rememberMe?: boolean
 
   @ApiProperty({ 
     example: ApplicationTypeEnum.WEB_APP, 
@@ -29,5 +29,5 @@ export class LoginDto {
   })
   @IsOptional()
   @IsEnum(ApplicationTypeEnum)
-  application?: ApplicationTypeEnum;
+  application?: ApplicationTypeEnum
 }

@@ -118,22 +118,22 @@ module.exports = {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
       },
-    });
+    })
 
-    await queryInterface.addIndex('Properties', ['owner_id']);
-    await queryInterface.addIndex('Properties', ['city']);
-    await queryInterface.addIndex('Properties', ['postcode']);
-    await queryInterface.addIndex('Properties', ['category']);
-    await queryInterface.addIndex('Properties', ['is_available']);
+    await queryInterface.addIndex('Properties', ['owner_id'])
+    await queryInterface.addIndex('Properties', ['city'])
+    await queryInterface.addIndex('Properties', ['postcode'])
+    await queryInterface.addIndex('Properties', ['category'])
+    await queryInterface.addIndex('Properties', ['is_available'])
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.removeIndex('Properties', ['owner_id']);
-    await queryInterface.removeIndex('Properties', ['city']);
-    await queryInterface.removeIndex('Properties', ['postcode']);
-    await queryInterface.removeIndex('Properties', ['category']);
-    await queryInterface.removeIndex('Properties', ['is_available']);
-    await queryInterface.dropTable('Properties');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Properties_category";');
+    await queryInterface.removeIndex('Properties', ['owner_id'])
+    await queryInterface.removeIndex('Properties', ['city'])
+    await queryInterface.removeIndex('Properties', ['postcode'])
+    await queryInterface.removeIndex('Properties', ['category'])
+    await queryInterface.removeIndex('Properties', ['is_available'])
+    await queryInterface.dropTable('Properties')
+    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Properties_category"')
   },
-};
+}

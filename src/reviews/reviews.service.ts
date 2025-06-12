@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
-import { Review } from './entities/review.entity';
-import { CreateReviewDto } from './dto/create-review.dto';
-import { User } from '../users/entities/user.entity';
-import { Property } from '../properties/entities/property.entity';
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { InjectModel } from '@nestjs/sequelize'
+import { Review } from './entities/review.entity'
+import { CreateReviewDto } from './dto/create-review.dto'
+import { User } from '../users/entities/user.entity'
+import { Property } from '../properties/entities/property.entity'
 
 @Injectable()
 export class ReviewsService {
@@ -16,7 +16,7 @@ export class ReviewsService {
     return this.reviewModel.create({
       ...createReviewDto,
       reviewerId,
-    });
+    })
   }
 
   async findAll(): Promise<Review[]> {
@@ -33,7 +33,7 @@ export class ReviewsService {
         },
       ],
       order: [['createdAt', 'DESC']],
-    });
+    })
   }
 
   async findOne(id: string): Promise<Review> {
@@ -49,13 +49,13 @@ export class ReviewsService {
           attributes: ['id', 'title', 'city'],
         },
       ],
-    });
+    })
 
     if (!review) {
-      throw new NotFoundException('Review not found');
+      throw new NotFoundException('Review not found')
     }
 
-    return review;
+    return review
   }
 
   async findByProperty(propertyId: string): Promise<Review[]> {
@@ -69,7 +69,7 @@ export class ReviewsService {
         },
       ],
       order: [['createdAt', 'DESC']],
-    });
+    })
   }
 
   async findByUser(reviewerId: string): Promise<Review[]> {
@@ -82,17 +82,17 @@ export class ReviewsService {
         },
       ],
       order: [['createdAt', 'DESC']],
-    });
+    })
   }
 
   async update(id: string, updateData: Partial<CreateReviewDto>): Promise<Review> {
-    const review = await this.findOne(id);
-    await review.update(updateData);
-    return review;
+    const review = await this.findOne(id)
+    await review.update(updateData)
+    return review
   }
 
   async remove(id: string): Promise<void> {
-    const review = await this.findOne(id);
-    await review.destroy();
+    const review = await this.findOne(id)
+    await review.destroy()
   }
 }

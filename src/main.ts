@@ -1,32 +1,32 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-import * as express from 'express';
-import { join } from 'path';
+import { NestFactory } from '@nestjs/core'
+import { ValidationPipe } from '@nestjs/common'
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import { AppModule } from './app.module'
+import * as express from 'express'
+import { join } from 'path'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule)
   
   // Set global prefix
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api')
   
   // Setup validation pipe
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
     forbidNonWhitelisted: true,
-  }));
+  }))
   
   // Enable CORS
   app.enableCors({
     origin: process.env.FRONTEND_URL,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
-  });
+  })
 
   // Serve static files (property images)
-  app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
+  app.use('/uploads', express.static(join(__dirname, '..', 'uploads')))
   
   // Setup Swagger documentation
   const config = new DocumentBuilder()
@@ -39,14 +39,14 @@ async function bootstrap() {
     .addTag('bookings', 'Booking management endpoints')
     .addTag('reviews', 'Review management endpoints')
     .addBearerAuth()
-    .build();
+    .build()
   
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  const document = SwaggerModule.createDocument(app, config)
+  SwaggerModule.setup('api/docs', app, document)
   
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+  const port = process.env.PORT || 3000
+  await app.listen(port)
+  Logger.log(`Application is running on: http://localhost:${port}`)
 }
 
-bootstrap();
+bootstrap()
