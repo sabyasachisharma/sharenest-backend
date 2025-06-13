@@ -1,13 +1,14 @@
 import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common'
 import { Op } from 'sequelize'
 import { ConfigService } from '@nestjs/config'
-import { Property, PropertyCategory } from './entities/property.entity'
+import { Property } from './entities/property.entity'
 import { Favorite } from './entities/favorite.entity'
 import { User } from '../users/entities/user.entity'
 import { CreatePropertyDto } from './dto/create-property.dto'
 import { UpdatePropertyDto } from './dto/update-property.dto'
 import { PropertySearchDto } from './dto/property-search.dto'
 import { InjectModel } from '@nestjs/sequelize'
+
 
 @Injectable()
 export class PropertiesService {
@@ -19,11 +20,14 @@ export class PropertiesService {
     private readonly configService: ConfigService,
   ) {}
 
+
   async create(createPropertyDto: CreatePropertyDto, ownerId: string): Promise<Property> {
-    return this.propertyModel.create({
+    const property = await this.propertyModel.create({
       ...createPropertyDto,
       ownerId,
     })
+
+    return this.findOne(property.id);
   }
 
   async findAll(): Promise<Property[]> {
@@ -68,7 +72,7 @@ export class PropertiesService {
     await property.destroy()
   }
 
-  async search(searchDto: PropertySearchDto): Promise<{ count: number rows: Property[] }> {
+  async search(searchDto: PropertySearchDto): Promise<{ count: number; rows: Property[] }> {
     const {
       query,
       category,

@@ -7,9 +7,8 @@ import { UsersModule } from '../users/users.module'
 import { JwtModule } from '@nestjs/jwt'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { PassportModule } from '@nestjs/passport'
-import { LocalStrategy } from './strategies/local.strategy'
-import { JwtStrategy } from './strategies/jwt.strategy'
 import { MailModule } from '../mail/mail.module'
+import { JwtAccessTokenStrategy } from './strategies/jwt-access-token.strategy'
 
 @Module({
   imports: [
@@ -19,17 +18,12 @@ import { MailModule } from '../mail/mail.module'
     UsersModule,
     PassportModule,
     MailModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: configService.get<string>('JWT_EXPIRATION') || '1h' },
-      }),
-      inject: [ConfigService],
+    JwtModule.register({
+      secret: process.env.JWT_ACCESS_TOKEN_SECRET_KEY,
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
-  exports: [AuthService],
+  providers: [AuthService, JwtAccessTokenStrategy],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

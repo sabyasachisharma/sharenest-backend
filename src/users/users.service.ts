@@ -1,10 +1,12 @@
+
 import { Injectable, Inject, NotFoundException, BadRequestException, Logger } from '@nestjs/common'
 import { InjectModel } from '@nestjs/sequelize'
-import { User, UserStatus } from './entities/user.entity'
+import { User } from './entities/user.entity'
 import { CreateUserDto } from './dto/create-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
 import { ConfigService } from '@nestjs/config'
 import { CommonUtils } from '../common/utils/common.utils'
+import { UserStatusEnum } from 'src/auth/enums/user-status.enum'
 
 @Injectable()
 export class UsersService {
@@ -32,13 +34,21 @@ export class UsersService {
     const userData = {
       ...createUserDto,
       password: hashedPassword,
-      status: UserStatus.ACTIVE,
+      status: UserStatusEnum.ACTIVE,
     }
 
     const user = await this.userModel.create(userData)
     Logger.log(`User created successfully with ID: ${user.id}`)
     
     return user
+  }
+
+  getUserByEmail(email: string): Promise<User> {
+    return this.userModel.findOne({
+      where: {
+        email,
+      },
+    })
   }
 
   async validatePassword(candidatePassword: string, hashedPassword: string): Promise<boolean> {
@@ -51,7 +61,7 @@ export class UsersService {
     await this.userModel.update(
       {
         password: hashedPassword,
-        status: UserStatus.ACTIVE,
+        status: UserStatusEnum.ACTIVE,
         updatedAt: new Date(),
       },
       { where: { id: userId } }

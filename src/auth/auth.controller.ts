@@ -4,20 +4,20 @@ import {
   Body,
   HttpCode,
   UseGuards,
-  Request,
   Get,
   BadRequestException,
   Response,
+  Req,
 } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
-import { Response as ExpressResponse } from 'express'
-import { AuthService, ApplicationTypeEnum } from './auth.service'
+// import { Response as ExpressResponse } from 'express'
+import { Request } from "express"
+import { AuthService, ApplicationTypeEnum, AuthConstants } from './auth.service'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
 import { RefreshTokenDto } from './dto/refresh-token.dto'
 import { ForgotPasswordDto } from './dto/forgot-password.dto'
 import { ResetPasswordDto } from './dto/reset-password.dto'
-import { JwtAuthGuard } from './guards/jwt-auth.guard'
 
 @ApiTags('auth')
 @Controller('auth')
@@ -25,9 +25,6 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User has been created and tokens issued' })
-  @ApiResponse({ status: 400, description: 'Invalid input or email already exists' })
   async register(@Body() registerDto: RegisterDto) {
     const result = await this.authService.register(registerDto)
     return {
@@ -38,26 +35,13 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Log in with email and password' })
-  @ApiResponse({ status: 200, description: 'Access and refresh tokens returned' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(
-    @Response({ passthrough: true }) response: ExpressResponse,
-    @Body() loginDto: LoginDto
+  async login(@Req() { res: response }: Request, @Body() loginDto: LoginDto
   ) {
-    const applicationType = loginDto.application || ApplicationTypeEnum.WEB_APP
-    const result = await this.authService.login(response, loginDto, applicationType)
-    return {
-      message: 'Login successful',
-      ...result,
-    }
+    return await this.authService.login(response, loginDto)
   }
 
+
   @Post('refresh-token')
-  @HttpCode(200)
-  @ApiOperation({ summary: 'Refresh access token' })
-  @ApiResponse({ status: 200, description: 'New access token generated' })
-  @ApiResponse({ status: 400, description: 'Invalid or expired refresh token' })
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
     const result = await this.authService.refreshToken(refreshTokenDto.refreshToken)
     if (!result) {
@@ -71,13 +55,12 @@ export class AuthController {
 
   // 🚪 Logout user (revoke refresh token)
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
   @HttpCode(200)
   @ApiOperation({ summary: 'Log out user' })
   @ApiResponse({ status: 200, description: 'User logged out and tokens invalidated' })
-  async logout(@Request() req) {
-    await this.authService.logout(req.user.id)
-    return { message: 'Logged out successfully' }
+  async logout(@Req() { res: response }: Request) {
+    response.clearCookie(AuthConstants.ACCESS_TOKEN).clearCookie(AuthConstants.REFRESH_TOKEN)
+    return { message: "User successfully logged out" }
   }
 
   // 🔑 Forgot password request
@@ -113,12 +96,11 @@ export class AuthController {
 
   // 👤 Get current authenticated user
   @Get('me')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current authenticated user' })
   @ApiResponse({ status: 200, description: 'Returns user info' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getProfile(@Request() req) {
-    return req.user
+  async getProfile(@Req() { res: response }) {
+    return response.user
   }
 
   // ⚙️ Health check endpoint

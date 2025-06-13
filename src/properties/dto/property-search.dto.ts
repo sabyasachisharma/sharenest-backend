@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsOptional, IsString, IsEnum, IsNumber, IsDateString, Min, Max, IsInt } from 'class-validator'
 import { Type } from 'class-transformer'
-import { PropertyCategory } from '../entities/property.entity'
+import { PropertyCategory } from 'src/common/enums/property-category.enum'
 
 export class PropertySearchDto {
   @ApiProperty({ required: false })

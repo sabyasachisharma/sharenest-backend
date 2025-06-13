@@ -18,14 +18,14 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { RolesGuard } from '../auth/guards/roles.guard'
-import { Roles } from '../auth/decorators/roles.decorator'
-import { UserRole } from '../users/entities/user.entity'
+import { Roles } from '../auth/roles/roles.decorator'
+import { JwtAccessGuard } from '../auth/strategies/jwt-access-token.guard'
 import { PropertiesService } from './properties.service'
 import { CreatePropertyDto } from './dto/create-property.dto'
 import { UpdatePropertyDto } from './dto/update-property.dto'
 import { PropertySearchDto } from './dto/property-search.dto'
+import { UserRole } from 'src/auth/enums/role.enum'
+import { RolesGuard } from 'src/auth/roles/roles.guard'
 
 @ApiTags('properties')
 @Controller('properties')
@@ -47,9 +47,7 @@ export class PropertiesController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get property by id' })
-  @ApiResponse({ status: 200, description: 'Return the property' })
-  @ApiResponse({ status: 404, description: 'Property not found' })
+  @UseGuards(JwtAccessGuard, RolesGuard)
   async findOne(@Param('id') id: string) {
     const property = await this.propertiesService.findOne(id)
     if (!property) {
@@ -58,25 +56,17 @@ export class PropertiesController {
     return property
   }
 
-  @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles(UserRole.LANDLORD)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a new property' })
-  @ApiResponse({ status: 201, description: 'Property has been created' })
-  @ApiResponse({ status: 403, description: 'Forbidden resource' })
+  @Post()
   async create(@Request() req, @Body() createPropertyDto: CreatePropertyDto) {
     return this.propertiesService.create(createPropertyDto, req.user.id)
   }
 
-  @Put(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+
+  @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles(UserRole.LANDLORD)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update a property' })
-  @ApiResponse({ status: 200, description: 'Property has been updated' })
-  @ApiResponse({ status: 403, description: 'Forbidden resource' })
-  @ApiResponse({ status: 404, description: 'Property not found' })
+  @Put(':id')
   async update(
     @Request() req,
     @Param('id') id: string,
@@ -96,13 +86,8 @@ export class PropertiesController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles(UserRole.LANDLORD)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete a property' })
-  @ApiResponse({ status: 200, description: 'Property has been deleted' })
-  @ApiResponse({ status: 403, description: 'Forbidden resource' })
-  @ApiResponse({ status: 404, description: 'Property not found' })
   async remove(@Request() req, @Param('id') id: string) {
     const property = await this.propertiesService.findOne(id)
     
@@ -119,36 +104,28 @@ export class PropertiesController {
   }
 
   @Post(':id/favorite')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Add property to favorites' })
+  @UseGuards(JwtAccessGuard, RolesGuard)
   async addToFavorites(@Request() req, @Param('id') propertyId: string) {
     await this.propertiesService.toggleFavorite(req.user.id, propertyId, true)
     return { message: 'Property added to favorites' }
   }
 
   @Delete(':id/favorite')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Remove property from favorites' })
+  @UseGuards(JwtAccessGuard, RolesGuard)
   async removeFromFavorites(@Request() req, @Param('id') propertyId: string) {
     await this.propertiesService.toggleFavorite(req.user.id, propertyId, false)
     return { message: 'Property removed from favorites' }
   }
 
   @Get('user/favorites')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get user favorite properties' })
+  @UseGuards(JwtAccessGuard, RolesGuard)
   async getFavorites(@Request() req) {
     return this.propertiesService.getUserFavorites(req.user.id)
   }
 
   @Get('user/landlord')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles(UserRole.LANDLORD)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get properties owned by the landlord' })
   async getLandlordProperties(@Request() req) {
     return this.propertiesService.getLandlordProperties(req.user.id)
   }

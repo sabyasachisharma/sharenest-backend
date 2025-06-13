@@ -1,3 +1,5 @@
+import { Logger } from '@nestjs/common'
+
 export * from './auth.test-utils'
 
 // Test suite configuration

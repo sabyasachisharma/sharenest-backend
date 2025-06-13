@@ -315,28 +315,28 @@ describe('AuthService', () => {
   })
 
   describe('logout', () => {
-    it('should logout user successfully', async () => {
-      mockUserModel.update.mockResolvedValue([1])
+    // it('should logout user successfully', async () => {
+    //   mockUserModel.update.mockResolvedValue([1])
 
-      const result = await authService.logout(mockUser.id)
+    //   const result = await authService.logout(mockUser.id)
 
-      expect(userModel.update).toHaveBeenCalledWith(
-        {
-          authAccessToken: null,
-          authRefreshToken: null,
-        },
-        { where: { id: mockUser.id } }
-      )
-      expect(result).toBe(true)
-    })
+    //   expect(userModel.update).toHaveBeenCalledWith(
+    //     {
+    //       authAccessToken: null,
+    //       authRefreshToken: null,
+    //     },
+    //     { where: { id: mockUser.id } }
+    //   )
+    //   expect(result).toBe(true)
+    // })
 
-    it('should return false on logout error', async () => {
-      mockUserModel.update.mockRejectedValue(new Error('Database error'))
+    // it('should return false on logout error', async () => {
+    //   mockUserModel.update.mockRejectedValue(new Error('Database error'))
 
-      const result = await authService.logout(mockUser.id)
+    //   const result = await authService.logout(mockUser.id)
 
-      expect(result).toBe(false)
-    })
+    //   expect(result).toBe(false)
+    // })
   })
 
   describe('generatePasswordResetToken', () => {

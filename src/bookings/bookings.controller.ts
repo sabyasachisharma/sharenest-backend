@@ -11,22 +11,18 @@ import {
   Delete
 } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { RolesGuard } from '../auth/guards/roles.guard'
-import { Roles } from '../auth/decorators/roles.decorator'
-import { UserRole } from '../users/entities/user.entity'
+import { Roles } from 'src/auth/roles/roles.decorator'
+import { UserRole } from 'src/auth/enums/role.enum'
 import { BookingsService } from './bookings.service'
 import { CreateBookingDto } from './dto/create-booking.dto'
 import { BookingStatus } from './entities/booking.entity'
 
 @ApiTags('bookings')
 @Controller('bookings')
-@UseGuards(JwtAuthGuard)
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.TENANT)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a booking request' })
@@ -67,7 +63,6 @@ export class BookingsController {
   }
 
   @Put(':id/status')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.LANDLORD)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update booking status' })

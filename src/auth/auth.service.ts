@@ -60,40 +60,36 @@ export class AuthService {
     }
   }
 
-  async login(response: Response, loginDto: LoginDto, applicationType: ApplicationTypeEnum = ApplicationTypeEnum.WEB_APP) {
+  async login(response: Response, loginDto: LoginDto): Promise<any> {
     const user = await this.validateUser(loginDto.email, loginDto.password)
+  
     if (!user) {
       throw new UnauthorizedException('Invalid credentials')
     }
-    
+  
     return this.createUserTokens(response, user)
   }
-
+  
   async createUserTokens(response: Response, user: User) {
     const { accessTokenMobile, accessToken } = await this.createAccessToken(user)
     const { refreshTokenMobile, refreshToken } = await this.createRefreshToken(user)
-    
-    // Set cookies in response
-    response.setHeader("Set-Cookie", [accessTokenMobile, refreshTokenMobile])
+  
+    response.setHeader('Set-Cookie', [accessTokenMobile, refreshTokenMobile])
+  
+    Logger.log(`User ${user.email} logged in successfully. Token issued.`)
 
-    const responseBody = {
+    return {
       id: user.id,
       accessToken: accessToken,
       refreshToken: refreshToken,
       success: true,
     }
-
-    Logger.log(
-      `User ${user.email} logged in! AccessToken: ${accessToken.substring(0, 20)}...`
-    )
-
-    return responseBody
   }
-
-  async createAccessToken(user: any) {
+  
+  async createAccessToken(user: User) {
     const accessToken = await this.generateAccessToken(user)
     const accessTokenHash = await CommonUtils.generateHash(accessToken)
-    
+  
     await this.userModel.update(
       {
         authAccessToken: accessTokenHash,
@@ -101,60 +97,61 @@ export class AuthService {
         updatedAt: new Date(),
       },
       { where: { id: user.id } }
-    )
-
-    const cookieMaxAge = this.configService.get('JWT_ACCESS_COOKIE_EXPIRATION') || '3600' // 1 hour default
-    const domain = this.configService.get('SIGNUP_DOMAIN') || 'localhost'
-
+    )  
     return {
-      accessTokenMobile: `${AuthConstants.ACCESS_TOKEN}=${accessToken} HttpOnly Domain=${domain} Path=/ Max-Age=${cookieMaxAge}`,
+      accessTokenMobile: `${AuthConstants.ACCESS_TOKEN}=${accessToken}; HttpOnly; Domain=${process.env.SIGNUP_DOMAIN}; Path=/; Max-Age=${process.env.JWT_ACCESS_COOKIE_EXPIRATION}`,
       accessToken: accessToken,
     }
   }
-
-  async createRefreshToken(user: any) {
+  
+  async createRefreshToken(user: User) {
     const refreshToken = await this.generateRefreshToken(user)
     const refreshTokenHash = await CommonUtils.generateHash(refreshToken)
-    
+  
     await this.userModel.update(
-      { 
-        authRefreshToken: refreshTokenHash, 
-        lastAuthenticated: new Date(), 
-        updatedAt: new Date() 
+      {
+        authRefreshToken: refreshTokenHash,
+        lastAuthenticated: new Date(),
+        updatedAt: new Date(),
       },
       { where: { id: user.id } }
     )
-
-    const cookieMaxAge = this.configService.get('JWT_REFRESH_COOKIE_EXPIRATION') || '604800' // 7 days default
-    const domain = this.configService.get('SIGNUP_DOMAIN') || 'localhost'
-
     return {
-      refreshTokenMobile: `${AuthConstants.REFRESH_TOKEN}=${refreshToken} HttpOnly Domain=${domain} Path=/ Max-Age=${cookieMaxAge}`,
+      refreshTokenMobile: `${AuthConstants.REFRESH_TOKEN}=${refreshToken}; HttpOnly; Domain=${process.env.SIGNUP_DOMAIN}; Path=/; Max-Age=${process.env.JWT_REFRESH_COOKIE_EXPIRATION}`,
       refreshToken: refreshToken,
     }
-  }
+  }  
 
   async generateAccessToken(user: any): Promise<string> {
-    const payload = { 
-      sub: user.id, 
-      email: user.email, 
-      role: user.role,
-      type: 'access' 
+    const payload = {
+      sub: user.id,
+      tokenType: "auth",
+      user: {
+        id: user.id,
+        email: user.email.toLowerCase(),
+        role: user.roles,
+      },
     }
-    
-    const expiresIn = this.configService.get('JWT_ACCESS_TOKEN_EXPIRATION') || '1h'
-    return this.jwtService.sign(payload, { expiresIn })
+    return this.jwtService.sign(payload, {
+      secret: process.env.JWT_ACCESS_TOKEN_SECRET_KEY,
+      expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRATION
+    })
   }
 
   async generateRefreshToken(user: any): Promise<string> {
-    const payload = { 
-      sub: user.id, 
-      email: user.email,
-      type: 'refresh'
+    const payload = {
+      sub: user.id,
+      tokenType: "auth",
+      user: {
+        id: user.id,
+        email: user.email.toLowerCase(),
+        role: user.roles,
+      },
     }
-    
-    const expiresIn = this.configService.get('JWT_REFRESH_TOKEN_EXPIRATION') || '7d'
-    return this.jwtService.sign(payload, { expiresIn })
+    return this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_TOKEN_SECRET_KEY,
+      expiresIn: '7d', // 7 days in seconds
+    })
   }
 
   async refreshToken(refreshToken: string): Promise<any> {
@@ -169,7 +166,6 @@ export class AuthService {
       
       let validUser = null
       
-      // Check each user's hashed refresh token
       for (const user of users) {
         if (user.authRefreshToken && await CommonUtils.compareHash(refreshToken, user.authRefreshToken)) {
           validUser = user
@@ -203,24 +199,6 @@ export class AuthService {
     } catch (error) {
       Logger.error(`Refresh token error: {error}`)
       return null
-    }
-  }
-
-  async logout(userId: string): Promise<boolean> {
-    try {
-      // Clear tokens from user table
-      await this.userModel.update(
-        { 
-          authAccessToken: null,
-          authRefreshToken: null,
-        },
-        { where: { id: userId } }
-      )
-      
-      return true
-    } catch (error) {
-      Logger.error('Logout error:', error)
-      return false
     }
   }
 

@@ -11,7 +11,7 @@ import {
   Min,
   IsInt,
 } from 'class-validator'
-import { PropertyCategory } from '../entities/property.entity'
+import { PropertyCategory } from 'src/common/enums/property-category.enum'
 
 export class CreatePropertyDto {
   @ApiProperty({ example: 'Cozy Studio in Downtown' })

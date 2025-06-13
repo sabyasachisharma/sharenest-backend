@@ -13,12 +13,7 @@ import { User } from '../../users/entities/user.entity'
 import { Booking } from '../../bookings/entities/booking.entity'
 import { Review } from '../../reviews/entities/review.entity'
 import { Favorite } from './favorite.entity'
-
-export enum PropertyCategory {
-  SHARED_FLAT = 'shared_flat',
-  SUBLET = 'sublet',
-  STUDENT_HOUSING = 'student_housing',
-}
+import { PropertyCategory } from 'src/common/enums/property-category.enum'
 
 @Table({
   tableName: 'Properties',
@@ -47,13 +42,6 @@ export class Property extends Model {
   title: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false,
-    unique: true,
-  })
-  slug: string
-
-  @Column({
     type: DataType.TEXT,
     allowNull: false,
   })
@@ -72,10 +60,10 @@ export class Property extends Model {
   city: string
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.INTEGER,
     allowNull: false,
   })
-  postcode: string
+  postcode: number
 
   @Column({
     type: DataType.STRING,

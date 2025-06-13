@@ -3,25 +3,13 @@ import {
   Column,
   Model,
   DataType,
-  BeforeCreate,
-  BeforeUpdate,
   Unique,
-  DefaultScope,
-  Scopes,
   UpdatedAt,
   CreatedAt,
 } from 'sequelize-typescript'
+import { UserRole } from 'src/auth/enums/role.enum'
+import { UserStatusEnum } from 'src/auth/enums/user-status.enum'
 
-export enum UserRole {
-  TENANT = 'tenant',
-  LANDLORD = 'landlord',
-}
-
-export enum UserStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  SUSPENDED = 'suspended',
-}
 
 @Table({
   tableName: 'Users',
@@ -109,12 +97,9 @@ export class User extends Model {
   language: string
 
   @Column({
-    type: DataType.ENUM(...Object.values(UserStatus)),
-    allowNull: false,
-    defaultValue: UserStatus.ACTIVE,
+    type: DataType.ENUM(UserStatusEnum.ACTIVE, UserStatusEnum.INACTIVE, UserStatusEnum.BLOCKED),
   })
-  status: UserStatus
-
+  status: string
   @CreatedAt
   @Column({ field: "created_at" })
   createdAt: Date

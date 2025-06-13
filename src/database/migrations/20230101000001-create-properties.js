@@ -45,7 +45,7 @@ module.exports = {
       },
 
       postcode: {
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
         allowNull: false,
       },
 
