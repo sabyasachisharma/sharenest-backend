@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsNotEmpty, IsEnum, IsOptional, IsString } from 'class-validator'
-import { BookingStatus } from '../entities/booking.entity'
+import { BookingStatus } from 'src/common/enums/booking-status.enum'
 
 export class UpdateBookingStatusDto {
   @ApiProperty({ enum: BookingStatus, example: BookingStatus.APPROVED })

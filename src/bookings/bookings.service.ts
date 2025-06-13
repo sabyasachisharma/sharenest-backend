@@ -1,48 +1,67 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common'
 import { InjectModel } from '@nestjs/sequelize'
 import { Op } from 'sequelize'
-import { Booking, BookingStatus } from './entities/booking.entity'
+import { Booking } from './entities/booking.entity'
 import { Property } from '../properties/entities/property.entity'
 import { User } from '../users/entities/user.entity'
 import { CreateBookingDto } from './dto/create-booking.dto'
 import { PropertiesService } from '../properties/properties.service'
 import { UsersService } from '../users/users.service'
 import { MailService } from '../mail/mail.service'
+import { BookingStatus } from 'src/common/enums/booking-status.enum'
 
 @Injectable()
 export class BookingsService {
   constructor(
     @InjectModel(Booking)
-    private readonly bookingModel: typeof Booking,
-    private readonly propertiesService: PropertiesService,
-    private readonly usersService: UsersService,
-    private readonly mailService: MailService
+    private bookingModel: typeof Booking,
+    private propertiesService: PropertiesService,
+    private usersService: UsersService,
+    private mailService: MailService
   ) {}
 
   async create(createBookingDto: CreateBookingDto, tenantId: string): Promise<Booking> {
-    const property = await this.propertiesService.findOne(createBookingDto.propertyId)
-    
+    const property = await this.propertiesService.findOne(createBookingDto.propertyId);
+  
     if (!property) {
-      throw new NotFoundException('Property not found')
+      throw new NotFoundException('Property not found');
     }
-    
+  
     if (!property.isActive) {
-      throw new BadRequestException('Property is not available for booking')
+      throw new BadRequestException('Property is not available for booking');
     }
-    
-    // Check if dates are valid
-    const startDate = new Date(createBookingDto.startDate)
-    const endDate = new Date(createBookingDto.endDate)
-    const today = new Date()
-    
+  
+    const startDate = new Date(createBookingDto.startDate);
+    const endDate = new Date(createBookingDto.endDate);
+    const today = new Date();
+  
+    // Normalize times to avoid time-of-day mismatches
+    startDate.setUTCHours(0, 0, 0, 0);
+    endDate.setUTCHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
+  
+    // Booking date in the past
     if (startDate < today) {
-      throw new BadRequestException('Start date cannot be in the past')
+      throw new BadRequestException('Start date cannot be in the past');
     }
-    
+  
+    // End date must follow start date
     if (endDate <= startDate) {
-      throw new BadRequestException('End date must be after start date')
+      throw new BadRequestException('End date must be after start date');
     }
-    
+  
+    // Booking must be within property's availability window
+    const availableFrom = new Date(property.availableFrom);
+    const availableTo = new Date(property.availableTo);
+    availableFrom.setUTCHours(0, 0, 0, 0);
+    availableTo.setUTCHours(0, 0, 0, 0);
+    // we check for availability of the property for the selected dates
+    if (startDate < availableFrom || endDate > availableTo) {
+      throw new BadRequestException(
+        `Booking must be within the property's available range: ${availableFrom.toDateString()} to ${availableTo.toDateString()}`
+      );
+    }
+  
     // Check for overlapping bookings
     const overlappingBookings = await this.bookingModel.findAll({
       where: {
@@ -50,38 +69,25 @@ export class BookingsService {
         status: {
           [Op.in]: [BookingStatus.PENDING, BookingStatus.APPROVED],
         },
-        [Op.or]: [
-          {
-            startDate: {
-              [Op.between]: [startDate, endDate],
-            },
-          },
-          {
-            endDate: {
-              [Op.between]: [startDate, endDate],
-            },
-          },
-          {
-            [Op.and]: [
-              { startDate: { [Op.lte]: startDate } },
-              { endDate: { [Op.gte]: endDate } },
-            ],
-          },
+        [Op.and]: [
+          { startDate: { [Op.lte]: endDate } },
+          { endDate: { [Op.gte]: startDate } },
         ],
       },
-    })
-    
+    });
+  
     if (overlappingBookings.length > 0) {
-      throw new BadRequestException('Property is not available for the selected dates')
+      throw new BadRequestException('Property is not available for the selected dates');
     }
-    
+  
     // Create booking
     const booking = await this.bookingModel.create({
       ...createBookingDto,
       tenantId,
       status: BookingStatus.PENDING,
-    })
+    })  
     
+    Logger.log(`Booking created successfully ${JSON.stringify(booking)}`)
     // Send notification emails
     const tenant = await this.usersService.findOne(tenantId)
     const landlord = await this.usersService.findOne(property.ownerId)
@@ -90,24 +96,24 @@ export class BookingsService {
       from: startDate.toISOString().split('T')[0],
       to: endDate.toISOString().split('T')[0],
     }
-
-    await this.mailService.sendBookingRequestNotification(
-      landlord.email,
-      landlord.firstName,
-      tenant.firstName,
-      property.title,
-      dateRange,
-      null // bookingViewUrl parameter
-    )
+    // TODOS
+    // await this.mailService.sendBookingRequestNotification(
+    //   landlord.email,
+    //   landlord.firstName,
+    //   tenant.firstName,
+    //   property.title,
+    //   dateRange,
+    //   null // bookingViewUrl parameter
+    // )
     
-    await this.mailService.sendBookingStatusUpdate(
-      tenant.email,
-      tenant.firstName,
-      property.title,
-      'approved',
-      dateRange,
-      null // bookingViewUrl parameter
-    )
+    // await this.mailService.sendBookingStatusUpdate(
+    //   tenant.email,
+    //   tenant.firstName,
+    //   property.title,
+    //   'approved',
+    //   dateRange,
+    //   null // bookingViewUrl parameter
+    // )
     
     return booking
   }
@@ -193,34 +199,26 @@ export class BookingsService {
     })
   }
 
-  async updateStatus(id: string, status: BookingStatus): Promise<Booking> {
-    const booking = await this.findOne(id)
-    
-    if (booking.status === status) {
-      return booking
+  async updateStatus(booking: Booking, status: BookingStatus, userId: string) {
+    switch (status) {
+      case BookingStatus.CANCELLED:
+        if (booking.tenantId !== userId && booking.property.ownerId !== userId) {
+          throw new ForbiddenException('You do not have permission to cancel this booking')
+        }
+        break
+      case BookingStatus.APPROVED:
+        if (booking.property.ownerId !== userId) {
+          throw new ForbiddenException('You do not have permission to approve this booking')
+        }
+        break
+      case BookingStatus.REJECTED:
+        if (booking.property.ownerId !== userId) {
+          throw new ForbiddenException('You do not have permission to reject this booking')
+        }
+        break
     }
-    
     await booking.update({ status })
-    
-    // Send notification emails based on status
-    const tenant = await this.usersService.findOne(booking.tenantId)
-    const property = await this.propertiesService.findOne(booking.propertyId)
-    
-    const dateRange = {
-      from: booking.startDate.toISOString().split('T')[0],
-      to: booking.endDate.toISOString().split('T')[0],
-    }
-
-    await this.mailService.sendBookingStatusUpdate(
-      tenant.email,
-      tenant.firstName,
-      property.title,
-      status.toLowerCase() as 'approved' | 'rejected',
-      dateRange,
-      null // bookingViewUrl parameter
-    )
-    
-    return this.findOne(id)
+    return booking
   }
 
   async remove(id: string): Promise<void> {

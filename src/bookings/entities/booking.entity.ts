@@ -8,15 +8,13 @@ import {
 } from 'sequelize-typescript'
 import { User } from '../../users/entities/user.entity'
 import { Property } from '../../properties/entities/property.entity'
+import { BookingStatus } from '../../common/enums/booking-status.enum'
 
-export enum BookingStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  CANCELLED = 'cancelled',
-}
-
-@Table
+@Table({
+  tableName: 'Bookings',
+  timestamps: true,
+  underscored: true,
+})
 export class Booking extends Model {
   @Column({
     type: DataType.UUID,
@@ -29,6 +27,7 @@ export class Booking extends Model {
   @Column({
     type: DataType.UUID,
     allowNull: false,
+    field: 'tenant_id',
   })
   tenantId: string
 
@@ -36,23 +35,27 @@ export class Booking extends Model {
   @Column({
     type: DataType.UUID,
     allowNull: false,
+    field: 'property_id',
   })
   propertyId: string
 
   @Column({
     type: DataType.DATE,
     allowNull: false,
+    field: 'start_date',
   })
   startDate: Date
 
   @Column({
     type: DataType.DATE,
     allowNull: false,
+    field: 'end_date',
   })
   endDate: Date
 
   @Column({
     type: DataType.ENUM(...Object.values(BookingStatus)),
+    allowNull: false,
     defaultValue: BookingStatus.PENDING,
   })
   status: BookingStatus

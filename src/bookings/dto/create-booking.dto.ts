@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsNotEmpty, IsDateString, IsOptional, IsString } from 'class-validator'
+import { IsNotEmpty, IsDateString, IsOptional, IsString, IsEnum } from 'class-validator'
+import { BookingStatus } from 'src/common/enums/booking-status.enum'
 
 export class CreateBookingDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
@@ -21,4 +22,8 @@ export class CreateBookingDto {
   @IsOptional()
   @IsString()
   message?: string
+
+  @IsEnum(BookingStatus)
+  @IsOptional()
+  status?: BookingStatus
 }

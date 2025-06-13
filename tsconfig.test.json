@@ -3,6 +3,10 @@
     // OTT-3973 Leave strict mode disabled when building until the refactoring is complete
     "compilerOptions": {
       "strict": false,
+      "baseUrl": "./",
+      "paths": {
+        "src/*": ["src/*"]
+      }
     }
   }
   

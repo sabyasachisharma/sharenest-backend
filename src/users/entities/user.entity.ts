@@ -7,8 +7,8 @@ import {
   UpdatedAt,
   CreatedAt,
 } from 'sequelize-typescript'
-import { UserRole } from 'src/auth/enums/role.enum'
-import { UserStatusEnum } from 'src/auth/enums/user-status.enum'
+import { UserRole } from '../../auth/enums/role.enum'
+import { UserStatusEnum } from '../../auth/enums/user-status.enum'
 
 
 @Table({

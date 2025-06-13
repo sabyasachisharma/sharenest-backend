@@ -17,6 +17,8 @@ import { UsersService } from './users.service'
 import { UpdateUserDto } from './dto/update-user.dto'
 import { ChangePasswordDto } from './dto/change-password.dto'
 import { FileInterceptor } from '@nestjs/platform-express'
+import { RolesGuard } from 'src/auth/roles/roles.guard'
+import { JwtAccessGuard } from 'src/auth/strategies/jwt-access-token.guard'
 
 @ApiTags('users')
 @Controller('users')
@@ -24,7 +26,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @ApiBearerAuth()
+  @UseGuards(JwtAccessGuard, RolesGuard)
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'Return all users' })
   async findAll() {
@@ -32,38 +34,19 @@ export class UsersController {
   }
 
   @Get('profile')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({ status: 200, description: 'Return the user profile' })
+  @UseGuards(JwtAccessGuard, RolesGuard)
   async getProfile(@Request() req) {
-    return req.user
-  }
-
-  @Get(':id')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get user by id' })
-  @ApiResponse({ status: 200, description: 'Return the user' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async findOne(@Param('id') id: string) {
-    const user = await this.usersService.findOne(id)
-    if (!user) {
-      throw new NotFoundException('User not found')
-    }
-    return user
+    return this.usersService.findOne(req.user.id)
   }
 
   @Put('profile')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update current user profile' })
-  @ApiResponse({ status: 200, description: 'User has been updated' })
+  @UseGuards(JwtAccessGuard, RolesGuard)
   async updateProfile(@Request() req, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(req.user.id, updateUserDto)
   }
 
   @Post('profile/upload-image')
-  @ApiBearerAuth()
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload profile image' })
+  @UseGuards(JwtAccessGuard, RolesGuard)
   @UseInterceptors(FileInterceptor('profileImage'))
   async uploadProfileImage(@Request() req, @UploadedFile() file) {
     if (!file) {
@@ -74,21 +57,16 @@ export class UsersController {
   }
 
   @Post('change-password')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Change user password' })
-  @ApiResponse({ status: 200, description: 'Password has been changed' })
-  @ApiResponse({ status: 400, description: 'Current password is incorrect' })
+  @UseGuards(JwtAccessGuard, RolesGuard)
   async changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
     const result = await this.usersService.changePassword(
       req.user.id,
       changePasswordDto.currentPassword,
       changePasswordDto.newPassword,
     )
-    
     if (!result) {
       throw new BadRequestException('Current password is incorrect')
     }
-    
     return { message: 'Password has been changed successfully' }
   }
 }
