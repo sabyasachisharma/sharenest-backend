@@ -6,6 +6,7 @@ import { BookingsService } from './bookings.service'
 import { PropertiesModule } from '../properties/properties.module'
 import { UsersModule } from '../users/users.module'
 import { MailModule } from '../mail/mail.module'
+import { BookingAccessGuard } from './guards/booking-access.guard'
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { MailModule } from '../mail/mail.module'
     MailModule
   ],
   controllers: [BookingsController],
-  providers: [BookingsService],
+  providers: [BookingsService, BookingAccessGuard],
   exports: [BookingsService]
 })
 export class BookingsModule {}

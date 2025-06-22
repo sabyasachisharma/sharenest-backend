@@ -10,7 +10,9 @@ import {
   IsBoolean,
   Min,
   IsInt,
+  ArrayMaxSize,
 } from 'class-validator'
+import { Type, Transform } from 'class-transformer'
 import { PropertyCategory } from 'src/common/enums/property-category.enum'
 
 export class CreatePropertyDto {
@@ -46,6 +48,7 @@ export class CreatePropertyDto {
 
   @ApiProperty({ example: 1500 })
   @IsNotEmpty()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   price: number
@@ -57,18 +60,21 @@ export class CreatePropertyDto {
 
   @ApiProperty({ example: 1 })
   @IsNotEmpty()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   bedrooms: number
 
   @ApiProperty({ example: 1 })
   @IsNotEmpty()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   bathrooms: number
 
   @ApiProperty({ example: 500, required: false })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   size?: number
@@ -90,22 +96,52 @@ export class CreatePropertyDto {
 
   @ApiProperty({ example: ['WiFi', 'Air Conditioning', 'Dishwasher'], required: false })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value)
+      } catch {
+        return value
+      }
+    }
+    return value
+  })
   @IsArray()
   @IsString({ each: true })
   amenities?: string[]
 
   @ApiProperty({ example: true, default: true, required: false })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value === 'true'
+    }
+    return value
+  })
   @IsBoolean()
   isActive?: boolean
 
   @ApiProperty({ example: 40.7128, required: false })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   latitude?: number
 
   @ApiProperty({ example: -74.006, required: false })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   longitude?: number
+
+  @ApiProperty({ 
+    type: 'array', 
+    items: { type: 'string', format: 'binary' }, 
+    maxItems: 3,
+    required: false,
+    description: 'Property images (maximum 3). Allowed formats: JPEG, JPG, PNG'
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(3, { message: 'Maximum 3 images allowed' })
+  images?: Express.Multer.File[]
 }

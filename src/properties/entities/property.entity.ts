@@ -13,6 +13,7 @@ import { User } from '../../users/entities/user.entity'
 import { Booking } from '../../bookings/entities/booking.entity'
 import { Review } from '../../reviews/entities/review.entity'
 import { Favorite } from './favorite.entity'
+import { PropertyImage } from './property-image.entity'
 import { PropertyCategory } from 'src/common/enums/property-category.enum'
 
 @Table({
@@ -158,6 +159,9 @@ export class Property extends Model {
 
   @BelongsTo(() => User)
   owner: User
+
+  @HasMany(() => PropertyImage)
+  images: PropertyImage[]
 
   @HasMany(() => Booking)
   bookings: Booking[]

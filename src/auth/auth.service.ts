@@ -50,7 +50,8 @@ export class AuthService {
       
       const { password: _, ...result } = user.toJSON()
       return {
-        message: 'Registration successful.',
+        message: "Registration successful.",
+        user: result,
       }
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -219,7 +220,7 @@ export class AuthService {
     )
     
     // Send password reset email
-    const resetUrl = `${this.configService.get('FRONTEND_URL')}/reset-password/${resetToken}`
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
     await this.mailService.sendPasswordResetEmail(user.email, user.firstName, resetUrl)
     
     return true

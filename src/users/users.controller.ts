@@ -33,10 +33,12 @@ export class UsersController {
     return this.usersService.findAll()
   }
 
-  @Get('profile')
+  @Get('dashboard')
   @UseGuards(JwtAccessGuard, RolesGuard)
-  async getProfile(@Request() req) {
-    return this.usersService.findOne(req.user.id)
+  @ApiOperation({ summary: 'Get user profile with bookings' })
+  @ApiResponse({ status: 200, description: 'Return user profile and bookings data' })
+  async getUserDashboard(@Request() req) {
+    return this.usersService.getUserProfileWithBookings(req.user.id, req.user.role)
   }
 
   @Put('profile')
@@ -54,19 +56,5 @@ export class UsersController {
     }
     
     return this.usersService.updateProfileImage(req.user.id, file)
-  }
-
-  @Post('change-password')
-  @UseGuards(JwtAccessGuard, RolesGuard)
-  async changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
-    const result = await this.usersService.changePassword(
-      req.user.id,
-      changePasswordDto.currentPassword,
-      changePasswordDto.newPassword,
-    )
-    if (!result) {
-      throw new BadRequestException('Current password is incorrect')
-    }
-    return { message: 'Password has been changed successfully' }
   }
 }

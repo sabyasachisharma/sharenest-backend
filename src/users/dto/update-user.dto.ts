@@ -27,9 +27,4 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   bio?: string
-
-  @ApiProperty({ enum: UserRole, required: false })
-  @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole
 }

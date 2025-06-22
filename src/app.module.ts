@@ -8,6 +8,7 @@ import { join } from 'path'
 // Entity imports
 import { User } from './users/entities/user.entity'
 import { Property } from './properties/entities/property.entity'
+import { PropertyImage } from './properties/entities/property-image.entity'
 import { Favorite } from './properties/entities/favorite.entity'
 import { Booking } from './bookings/entities/booking.entity'
 import { Review } from './reviews/entities/review.entity'
@@ -50,6 +51,7 @@ import { MailModule } from './mail/mail.module'
       models: [
         User,
         Property,
+        PropertyImage,
         Favorite,
         Booking,
         Review,

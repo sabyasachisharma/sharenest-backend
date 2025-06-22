@@ -20,20 +20,28 @@ export class BookingsService {
     private mailService: MailService
   ) {}
 
+  private getBookingViewUrl(bookingId: string): string {
+    return `${process.env.FRONTEND_URL}/bookings/${bookingId}`
+  }
+
   async create(createBookingDto: CreateBookingDto, tenantId: string): Promise<Booking> {
+    Logger.log(`Creating booking for tenant ${tenantId} and  BookingDto ${JSON.stringify(createBookingDto)}`)
     const property = await this.propertiesService.findOne(createBookingDto.propertyId);
   
     if (!property) {
-      throw new NotFoundException('Property not found');
+      Logger.error(`Property not found for booking ${JSON.stringify(createBookingDto)}`)
+      throw new NotFoundException('Property not found')
+
     }
   
     if (!property.isActive) {
-      throw new BadRequestException('Property is not available for booking');
+      Logger.error(`Property is not active for booking ${JSON.stringify(createBookingDto)}`)
+      throw new BadRequestException('Property is not available for booking')
     }
   
-    const startDate = new Date(createBookingDto.startDate);
-    const endDate = new Date(createBookingDto.endDate);
-    const today = new Date();
+    const startDate = new Date(createBookingDto.startDate)
+    const endDate = new Date(createBookingDto.endDate)
+    const today = new Date()
   
     // Normalize times to avoid time-of-day mismatches
     startDate.setUTCHours(0, 0, 0, 0);
@@ -42,11 +50,13 @@ export class BookingsService {
   
     // Booking date in the past
     if (startDate < today) {
-      throw new BadRequestException('Start date cannot be in the past');
+      Logger.error(`Start date cannot be in the past for booking ${JSON.stringify(createBookingDto)}`)
+      throw new BadRequestException('Start date cannot be in the past')
     }
   
     // End date must follow start date
     if (endDate <= startDate) {
+      Logger.error(`End date must be after start date for booking ${JSON.stringify(createBookingDto)}`)
       throw new BadRequestException('End date must be after start date');
     }
   
@@ -57,6 +67,7 @@ export class BookingsService {
     availableTo.setUTCHours(0, 0, 0, 0);
     // we check for availability of the property for the selected dates
     if (startDate < availableFrom || endDate > availableTo) {
+      Logger.error(`Booking must be within the property's available range: ${availableFrom.toDateString()} to ${availableTo.toDateString()} for booking ${JSON.stringify(createBookingDto)}`)
       throw new BadRequestException(
         `Booking must be within the property's available range: ${availableFrom.toDateString()} to ${availableTo.toDateString()}`
       );
@@ -67,7 +78,7 @@ export class BookingsService {
       where: {
         propertyId: createBookingDto.propertyId,
         status: {
-          [Op.in]: [BookingStatus.PENDING, BookingStatus.APPROVED],
+          [Op.in]: [BookingStatus.APPROVED],
         },
         [Op.and]: [
           { startDate: { [Op.lte]: endDate } },
@@ -75,9 +86,10 @@ export class BookingsService {
         ],
       },
     });
-  
+    
     if (overlappingBookings.length > 0) {
-      throw new BadRequestException('Property is not available for the selected dates');
+      Logger.error(`Property is not available for the selected dates for booking ${JSON.stringify(createBookingDto)}`)
+      throw new BadRequestException('Property is not available for the selected dates')
     }
   
     // Create booking
@@ -96,24 +108,27 @@ export class BookingsService {
       from: startDate.toISOString().split('T')[0],
       to: endDate.toISOString().split('T')[0],
     }
-    // TODOS
-    // await this.mailService.sendBookingRequestNotification(
-    //   landlord.email,
-    //   landlord.firstName,
-    //   tenant.firstName,
-    //   property.title,
-    //   dateRange,
-    //   null // bookingViewUrl parameter
-    // )
+
+    const bookingViewUrl = this.getBookingViewUrl(booking.id)
+
+    // Send notification to landlord
+    await this.mailService.sendBookingRequestNotification(
+      landlord.email,
+      landlord.firstName,
+      property.title,
+      tenant.firstName,
+      dateRange,
+      bookingViewUrl
+    )
     
-    // await this.mailService.sendBookingStatusUpdate(
-    //   tenant.email,
-    //   tenant.firstName,
-    //   property.title,
-    //   'approved',
-    //   dateRange,
-    //   null // bookingViewUrl parameter
-    // )
+    // Send confirmation to tenant
+    await this.mailService.sendBookingConfirmationToTenant(
+      tenant.email,
+      tenant.firstName,
+      property.title,
+      dateRange,
+      bookingViewUrl
+    )
     
     return booking
   }
@@ -217,8 +232,38 @@ export class BookingsService {
         }
         break
     }
-    await booking.update({ status })
-    return booking
+
+    // Get the latest booking data with relations
+    const updatedBooking = await this.findOne(booking.id)
+    await updatedBooking.update({ status })
+
+    const dateRange = {
+      from: updatedBooking.startDate.toISOString().split('T')[0],
+      to: updatedBooking.endDate.toISOString().split('T')[0],
+    }
+
+    const bookingViewUrl = this.getBookingViewUrl(updatedBooking.id)
+
+    // Send status update email to tenant
+    if (status === BookingStatus.APPROVED || status === BookingStatus.REJECTED) {
+      const landlordContactInfo = status === BookingStatus.APPROVED ? {
+        name: `${updatedBooking.property.owner.firstName} ${updatedBooking.property.owner.lastName}`,
+        phone: updatedBooking.property.owner.phone || 'Not provided',
+      } : undefined
+
+      await this.mailService.sendBookingStatusUpdate(
+        updatedBooking.tenant.email,
+        updatedBooking.tenant.firstName,
+        updatedBooking.property.title,
+        status === BookingStatus.APPROVED ? 'approved' : 'rejected',
+        dateRange,
+        bookingViewUrl,
+        landlordContactInfo,
+        status === BookingStatus.REJECTED ? 'The property owner has declined your booking request.' : undefined
+      )
+    }
+
+    return updatedBooking
   }
 
   async remove(id: string): Promise<void> {

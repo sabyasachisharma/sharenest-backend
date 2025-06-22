@@ -5,10 +5,15 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
+  CreatedAt,
+  UpdatedAt,
 } from 'sequelize-typescript'
 import { Property } from './property.entity'
 
-@Table
+@Table({
+  tableName: 'PropertyImages',
+  timestamps: true,
+})
 export class PropertyImage extends Model {
   @Column({
     type: DataType.UUID,
@@ -17,30 +22,43 @@ export class PropertyImage extends Model {
   })
   id: string
 
-  @Column({
-    type: DataType.STRING,
-    allowNull: false,
-  })
-  url: string
-
-  @Column({
-    type: DataType.BOOLEAN,
-    defaultValue: false,
-  })
-  isFeatured: boolean
-
-  @Column({
-    type: DataType.INTEGER,
-    defaultValue: 0,
-  })
-  displayOrder: number
-
   @ForeignKey(() => Property)
   @Column({
     type: DataType.UUID,
     allowNull: false,
+    field: 'property_id',
   })
   propertyId: string
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    field: 'image_url',
+  })
+  imageUrl: string
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'cloudinary_public_id',
+  })
+  cloudinaryPublicId: string
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'sort_order',
+  })
+  sortOrder: number
+
+  @CreatedAt
+  @Column({ field: "created_at" })
+  createdAt: Date
+
+  @UpdatedAt
+  @Column({ field: "updated_at" })
+  updatedAt: Date
 
   @BelongsTo(() => Property)
   property: Property

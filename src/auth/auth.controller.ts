@@ -3,16 +3,13 @@ import {
   Post,
   Body,
   HttpCode,
-  UseGuards,
   Get,
   BadRequestException,
-  Response,
   Req,
 } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
-// import { Response as ExpressResponse } from 'express'
 import { Request } from "express"
-import { AuthService, ApplicationTypeEnum, AuthConstants } from './auth.service'
+import { AuthService, AuthConstants } from './auth.service'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
 import { RefreshTokenDto } from './dto/refresh-token.dto'

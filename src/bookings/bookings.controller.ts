@@ -18,6 +18,7 @@ import { CreateBookingDto } from './dto/create-booking.dto'
 import { BookingStatus } from 'src/common/enums/booking-status.enum'
 import { RolesGuard } from 'src/auth/roles/roles.guard'
 import { JwtAccessGuard } from 'src/auth/strategies/jwt-access-token.guard'
+import { BookingAccessGuard } from './guards/booking-access.guard'
 
 @ApiTags('bookings')
 @Controller('bookings')
@@ -39,28 +40,21 @@ export class BookingsController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAccessGuard, RolesGuard)
+  @UseGuards(JwtAccessGuard, RolesGuard, BookingAccessGuard)
   @Roles(UserRole.TENANT, UserRole.LANDLORD)
-  async findOne(@Param('id') id: string, @Request() req) {
-    const booking = await this.bookingsService.findOne(id)
-    if (booking.tenantId === req.user.id || booking.property.ownerId === req.user.id) {
-      return booking
-    }
-    throw new ForbiddenException('You do not have access to this booking')
+  async findOne(@Param('id') id: string) {
+    return this.bookingsService.findOne(id)
   }
 
   @Put(':id/status')
-  @UseGuards(JwtAccessGuard, RolesGuard)
+  @UseGuards(JwtAccessGuard, RolesGuard, BookingAccessGuard)
   @Roles(UserRole.TENANT, UserRole.LANDLORD)
   async updateStatus(
     @Param('id') id: string,
     @Body('status') status: BookingStatus,
     @Request() req
   ) {
-    const booking = await this.bookingsService.findOne(id)    
-    if (booking.property.ownerId !== req.user.id && booking.tenantId !== req.user.id) {
-      throw new ForbiddenException('You do not have permission to update this booking')
-    }
+    const booking = await this.bookingsService.findOne(id)
     return this.bookingsService.updateStatus(booking, status, req.user.id)
   }
 

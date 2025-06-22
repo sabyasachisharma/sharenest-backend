@@ -1,4 +1,3 @@
-
 import { Injectable, Inject, NotFoundException, BadRequestException, Logger } from '@nestjs/common'
 import { InjectModel } from '@nestjs/sequelize'
 import { User } from './entities/user.entity'
@@ -7,12 +6,18 @@ import { UpdateUserDto } from './dto/update-user.dto'
 import { ConfigService } from '@nestjs/config'
 import { CommonUtils } from '../common/utils/common.utils'
 import { UserStatusEnum } from 'src/auth/enums/user-status.enum'
+import { Booking } from '../bookings/entities/booking.entity'
+import { Property } from '../properties/entities/property.entity'
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User)
     private readonly userModel: typeof User,
+    @InjectModel(Booking)
+    private readonly bookingModel: typeof Booking,
+    @InjectModel(Property)
+    private readonly propertyModel: typeof Property,
     private readonly configService: ConfigService,
   ) {}
 
@@ -111,7 +116,7 @@ export class UsersService {
     const user = await this.findOne(id)
     
     const imagePath = `${file.path.replace('\\', '/')}`
-    const apiUrl = this.configService.get('API_URL')
+    const apiUrl = `${process.env.API_URL}`
     const imageUrl = `${apiUrl}/${imagePath}`
     
     await user.update({ profileImage: imageUrl })
@@ -142,5 +147,53 @@ export class UsersService {
   async remove(id: string): Promise<void> {
     const user = await this.findOne(id)
     await user.destroy()
+  }
+
+  async getUserProfileWithBookings(userId: string, userRole: string) {
+    const user = await this.findOne(userId)
+    
+    // Query bookings based on user role
+    const whereClause = userRole === 'tenant'
+      ? { tenantId: userId }
+      : { '$property.ownerId$': userId }
+    
+    const bookings = await this.bookingModel.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: Property,
+          attributes: ['id', 'title', 'address'],
+          include: [
+            {
+              model: User,
+              as: 'owner',
+              attributes: ['id', 'firstName', 'lastName', 'email'],
+            },
+          ],
+        },
+        {
+          model: User,
+          as: 'tenant',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+    })
+    
+    return {
+      profile: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        status: user.status,
+        profileImage: user.profileImage,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      bookings: bookings,
+    }
   }
 }

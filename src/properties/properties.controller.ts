@@ -11,19 +11,26 @@ import {
   Request,
   NotFoundException,
   ForbiddenException,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common'
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger'
+import { FilesInterceptor } from '@nestjs/platform-express'
 import { Roles } from '../auth/roles/roles.decorator'
 import { JwtAccessGuard } from '../auth/strategies/jwt-access-token.guard'
 import { PropertiesService } from './properties.service'
 import { CreatePropertyDto } from './dto/create-property.dto'
 import { UpdatePropertyDto } from './dto/update-property.dto'
 import { PropertySearchDto } from './dto/property-search.dto'
+import { UploadPropertyImagesDto } from './dto/upload-property-images.dto'
 import { UserRole } from 'src/auth/enums/role.enum'
 import { RolesGuard } from 'src/auth/roles/roles.guard'
 
@@ -39,11 +46,39 @@ export class PropertiesController {
     return this.propertiesService.search(searchDto)
   }
 
+  @Get('all')
+  @ApiOperation({ summary: 'Get all active properties for grid view' })
+  @ApiResponse({ status: 200, description: 'Return all active properties' })
+  async getAllProperties(@Query() searchDto: PropertySearchDto) {
+    return this.propertiesService.getAllActiveProperties(searchDto)
+  }
+
   @Get('featured')
   @ApiOperation({ summary: 'Get featured properties' })
   @ApiResponse({ status: 200, description: 'Return featured properties' })
   async getFeatured() {
     return this.propertiesService.getFeatured()
+  }
+
+  @Get('categories')
+  @ApiOperation({ summary: 'Get all property categories' })
+  @ApiResponse({ status: 200, description: 'Return all property categories' })
+  async getCategories() {
+    return this.propertiesService.getCategories()
+  }
+
+  @Get('cities')
+  @ApiOperation({ summary: 'Get all available cities' })
+  @ApiResponse({ status: 200, description: 'Return all available cities' })
+  async getCities() {
+    return this.propertiesService.getCities()
+  }
+
+  @Get('price-range')
+  @ApiOperation({ summary: 'Get price range statistics' })
+  @ApiResponse({ status: 200, description: 'Return price range statistics' })
+  async getPriceRange() {
+    return this.propertiesService.getPriceRange()
   }
 
   @Get(':id')
@@ -59,10 +94,37 @@ export class PropertiesController {
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles(UserRole.LANDLORD)
   @Post()
-  async create(@Request() req, @Body() createPropertyDto: CreatePropertyDto) {
-    return this.propertiesService.create(createPropertyDto, req.user.id)
-  }
+  @UseInterceptors(FilesInterceptor('images', 3, {
+    fileFilter: (req, file, callback) => {
+      // Check if file is an image
+      if (!file.mimetype.startsWith('image/')) {
+        return callback(new BadRequestException('Only image files are allowed'), false)
+      }
+      
+      // Check file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024 // 10MB
+      if (file.size > maxSize) {
+        return callback(new BadRequestException('File size too large. Maximum size is 10MB'), false)
+      }
+      
+      callback(null, true)
+    }
+  }))
 
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles(UserRole.LANDLORD)
+  @Post()
+  @UseInterceptors(FilesInterceptor('images'))
+  @ApiConsumes('multipart/form-data')
+  async create(
+    @Request() req,
+    @Body('data') data: string,
+    @UploadedFiles() files?: Express.Multer.File[]
+  ) {
+    console.log('files', files)
+    const parsed: CreatePropertyDto = JSON.parse(data); // validate this object manually or pass to service
+    return this.propertiesService.create(parsed, req.user.id, files);
+  }
 
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles(UserRole.LANDLORD)
@@ -128,5 +190,25 @@ export class PropertiesController {
   @Roles(UserRole.LANDLORD)
   async getLandlordProperties(@Request() req) {
     return this.propertiesService.getLandlordProperties(req.user.id)
+  }
+
+  @Delete(':propertyId/images/:imageId')
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles(UserRole.LANDLORD)
+  @ApiOperation({ summary: 'Delete property image' })
+  @ApiResponse({ status: 200, description: 'Image deleted successfully' })
+  async deletePropertyImage(
+    @Request() req,
+    @Param('propertyId') propertyId: string,
+    @Param('imageId') imageId: string,
+  ) {
+    const property = await this.propertiesService.findOne(propertyId)
+    
+    if (property.ownerId !== req.user.id) {
+      throw new ForbiddenException('You do not have permission to delete images for this property')
+    }
+
+    await this.propertiesService.deletePropertyImage(imageId, propertyId)
+    return { message: 'Image deleted successfully' }
   }
 }
