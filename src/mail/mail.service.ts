@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { createTransport, Transporter } from 'nodemailer';
 import { verificationTemplate } from './templates/verification.template';
 import { passwordResetTemplate } from './templates/password-reset.template';
@@ -11,12 +12,21 @@ export class MailService {
   private transporter: Transporter;
   private fromAddress: string;
 
-  constructor() {
+  constructor(private configService: ConfigService) {
     this.init();
   }
 
   private init() {
-    this.fromAddress = `"ShareNest" <neobyteinnovations@gmail.com>`
+    const sendGridApiKey = this.configService.get<string>('SENDGRID_API_KEY');
+    const sendGridFromEmail = this.configService.get<string>('SENDGRID_FROM_EMAIL');
+    const sendGridFromName = this.configService.get<string>('SENDGRID_FROM_NAME');
+
+    if (!sendGridApiKey) {
+      console.warn('SENDGRID_API_KEY not found in environment variables. Email service will not work.');
+      return;
+    }
+
+    this.fromAddress = `"${sendGridFromName}" <${sendGridFromEmail}>`
 
     this.transporter = createTransport({
       host: 'smtp.sendgrid.net',
@@ -24,12 +34,16 @@ export class MailService {
       secure: false, // false = TLS, true = SSL
       auth: {
         user: 'apikey', // ← this must be the literal string 'apikey'
-        pass: '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',
+        pass: sendGridApiKey,
       },
     });
   }
 
   private async send(to: string, subject: string, html: string): Promise<void> {
+    if (!this.transporter) {
+      throw new Error('Email service not initialized. Please check SENDGRID_API_KEY configuration.');
+    }
+
     const info = await this.transporter.sendMail({
       from: this.fromAddress,
       to,
