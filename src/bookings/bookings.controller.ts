@@ -10,7 +10,7 @@ import {
   ForbiddenException,
   Delete
 } from '@nestjs/common'
-import { ApiTags } from '@nestjs/swagger'
+import { ApiTags, ApiOperation } from '@nestjs/swagger'
 import { Roles } from 'src/auth/roles/roles.decorator'
 import { UserRole } from 'src/auth/enums/role.enum'
 import { BookingsService } from './bookings.service'
@@ -40,32 +40,48 @@ export class BookingsController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAccessGuard, RolesGuard, BookingAccessGuard)
+  @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles(UserRole.TENANT, UserRole.LANDLORD)
-  async findOne(@Param('id') id: string) {
-    return this.bookingsService.findOne(id)
+  async findOne(@Param('id') id: string, @Request() req) {
+    return this.bookingsService.findOne(id, req.user.id)
   }
 
   @Put(':id/status')
-  @UseGuards(JwtAccessGuard, RolesGuard, BookingAccessGuard)
+  @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles(UserRole.TENANT, UserRole.LANDLORD)
   async updateStatus(
     @Param('id') id: string,
     @Body('status') status: BookingStatus,
     @Request() req
   ) {
-    const booking = await this.bookingsService.findOne(id)
+    const booking = await this.bookingsService.findOne(id, req.user.id)
     return this.bookingsService.updateStatus(booking, status, req.user.id)
   }
 
-  @Delete(':id')
+  @Put(':id/confirm')
+  @ApiOperation({ summary: 'Confirm/Approve a booking (Landlord only)' })
   @UseGuards(JwtAccessGuard, RolesGuard)
-  @Roles(UserRole.TENANT)
-  async remove(@Param('id') id: string, @Request() req) {
-    const booking = await this.bookingsService.findOne(id)
-    if (booking.tenantId !== req.user.id) {
-      throw new ForbiddenException('You do not have permission to delete this booking')
-    }
-    return this.bookingsService.remove(id)
+  @Roles(UserRole.LANDLORD)
+  async confirmBooking(@Param('id') id: string, @Request() req) {
+    const booking = await this.bookingsService.findOne(id, req.user.id)
+    return this.bookingsService.updateStatus(booking, BookingStatus.APPROVED, req.user.id)
+  }
+
+  @Put(':id/reject')
+  @ApiOperation({ summary: 'Reject a booking (Landlord only)' })
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles(UserRole.LANDLORD)
+  async rejectBooking(@Param('id') id: string, @Request() req) {
+    const booking = await this.bookingsService.findOne(id, req.user.id)
+    return this.bookingsService.updateStatus(booking, BookingStatus.REJECTED, req.user.id)
+  }
+
+  @Put(':id/cancel')
+  @ApiOperation({ summary: 'Cancel a booking (Tenant or Landlord)' })
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles(UserRole.TENANT, UserRole.LANDLORD)
+  async cancelBooking(@Param('id') id: string, @Request() req) {
+    const booking = await this.bookingsService.findOne(id, req.user.id)
+    return this.bookingsService.updateStatus(booking, BookingStatus.CANCELLED, req.user.id)
   }
 }

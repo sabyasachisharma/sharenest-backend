@@ -13,15 +13,12 @@ import {
   ForbiddenException,
   UseInterceptors,
   UploadedFiles,
-  BadRequestException,
 } from '@nestjs/common'
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
   ApiConsumes,
-  ApiBody,
 } from '@nestjs/swagger'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { Roles } from '../auth/roles/roles.decorator'
@@ -83,6 +80,7 @@ export class PropertiesController {
 
   @Get(':id')
   @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles(UserRole.TENANT)
   async findOne(@Param('id') id: string) {
     const property = await this.propertiesService.findOne(id)
     if (!property) {
@@ -94,26 +92,6 @@ export class PropertiesController {
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles(UserRole.LANDLORD)
   @Post()
-  @UseInterceptors(FilesInterceptor('images', 3, {
-    fileFilter: (req, file, callback) => {
-      // Check if file is an image
-      if (!file.mimetype.startsWith('image/')) {
-        return callback(new BadRequestException('Only image files are allowed'), false)
-      }
-      
-      // Check file size (max 10MB)
-      const maxSize = 10 * 1024 * 1024 // 10MB
-      if (file.size > maxSize) {
-        return callback(new BadRequestException('File size too large. Maximum size is 10MB'), false)
-      }
-      
-      callback(null, true)
-    }
-  }))
-
-  @UseGuards(JwtAccessGuard, RolesGuard)
-  @Roles(UserRole.LANDLORD)
-  @Post()
   @UseInterceptors(FilesInterceptor('images'))
   @ApiConsumes('multipart/form-data')
   async create(
@@ -121,9 +99,8 @@ export class PropertiesController {
     @Body('data') data: string,
     @UploadedFiles() files?: Express.Multer.File[]
   ) {
-    console.log('files', files)
-    const parsed: CreatePropertyDto = JSON.parse(data); // validate this object manually or pass to service
-    return this.propertiesService.create(parsed, req.user.id, files);
+    const parsed: CreatePropertyDto = JSON.parse(data)
+    return this.propertiesService.create(parsed, req.user.id, files)
   }
 
   @UseGuards(JwtAccessGuard, RolesGuard)

@@ -73,6 +73,19 @@ export class Property extends Model {
   address: string
 
   @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  street: string
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'house_number',
+  })
+  houseNumber: string
+
+  @Column({
     type: DataType.DECIMAL(8, 6),
     allowNull: true,
   })

@@ -156,12 +156,12 @@ export class BookingsService {
     })
   }
 
-  async findOne(id: string): Promise<Booking> {
+  async findOne(id: string, userId?: string): Promise<Booking> {
     const booking = await this.bookingModel.findByPk(id, {
       include: [
         {
           model: Property,
-          attributes: ['id', 'title', 'address'],
+          attributes: ['id', 'title', 'address', 'ownerId'],
           include: [
             {
               model: User,
@@ -180,6 +180,10 @@ export class BookingsService {
     
     if (!booking) {
       throw new NotFoundException('Booking not found')
+    }
+    
+    if (userId && booking.tenantId !== userId && booking.property.ownerId !== userId) {
+      throw new ForbiddenException('You do not have permission to access this booking')
     }
     
     return booking
@@ -215,6 +219,7 @@ export class BookingsService {
   }
 
   async updateStatus(booking: Booking, status: BookingStatus, userId: string) {
+    Logger.log(`Updating booking status to ${status} for booking ${booking.id} by user ${userId}`)
     switch (status) {
       case BookingStatus.CANCELLED:
         if (booking.tenantId !== userId && booking.property.ownerId !== userId) {
@@ -233,8 +238,7 @@ export class BookingsService {
         break
     }
 
-    // Get the latest booking data with relations
-    const updatedBooking = await this.findOne(booking.id)
+    const updatedBooking = await this.findOne(booking.id, userId)
     await updatedBooking.update({ status })
 
     const dateRange = {
@@ -244,7 +248,6 @@ export class BookingsService {
 
     const bookingViewUrl = this.getBookingViewUrl(updatedBooking.id)
 
-    // Send status update email to tenant
     if (status === BookingStatus.APPROVED || status === BookingStatus.REJECTED) {
       const landlordContactInfo = status === BookingStatus.APPROVED ? {
         name: `${updatedBooking.property.owner.firstName} ${updatedBooking.property.owner.lastName}`,
@@ -264,10 +267,5 @@ export class BookingsService {
     }
 
     return updatedBooking
-  }
-
-  async remove(id: string): Promise<void> {
-    const booking = await this.findOne(id)
-    await booking.destroy()
   }
 }

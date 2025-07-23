@@ -26,17 +26,59 @@ export class PropertiesService {
 
 
   async create(createPropertyDto: CreatePropertyDto, ownerId: string, files?: Express.Multer.File[]): Promise<Property> {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    const availableFromDate = new Date(createPropertyDto.availableFrom)
+    availableFromDate.setHours(0, 0, 0, 0)
+    
+    if (availableFromDate < today) {
+      throw new BadRequestException('Available from date must be today or a future date')
+    }
+    
+    if (createPropertyDto.availableTo) {
+      const availableToDate = new Date(createPropertyDto.availableTo)
+      availableToDate.setHours(0, 0, 0, 0)
+      
+      if (availableToDate <= availableFromDate) {
+        throw new BadRequestException('Available to date must be after the available from date')
+      }
+    }
+
+    // Check for duplicate properties based on postcode, street, and house number
+    if (createPropertyDto.postcode && createPropertyDto.street && createPropertyDto.houseNumber) {
+      const existingProperty = await this.propertyModel.findOne({
+        where: {
+          postcode: createPropertyDto.postcode,
+          street: createPropertyDto.street,
+          houseNumber: createPropertyDto.houseNumber,
+          isActive: true, // Only check active properties
+        },
+      })
+
+      if (existingProperty) {
+        throw new BadRequestException(
+          `A property already exists at ${createPropertyDto.houseNumber} ${createPropertyDto.street}, postcode ${createPropertyDto.postcode}`
+        )
+      }
+    }
+
     const property = await this.propertyModel.create({
       ...createPropertyDto,
       ownerId,
     })
 
-    // Handle image uploads if files are provided
     if (files && files.length > 0) {
-      await this.uploadPropertyImages(property.id, files)
+      const uploadedImages = await this.uploadPropertyImages(property.id, files)
+      
+      if (uploadedImages.length > 0) {
+        await property.update({
+          imageUrl: uploadedImages[0].imageUrl
+        })
+      }
     }
 
-    return this.findOneWithImages(property.id)
+    return property
   }
 
   async findAll(): Promise<Property[]> {
@@ -311,15 +353,12 @@ export class PropertiesService {
     return favorites.map(favorite => favorite.property)
   }
 
-  // PropertyImage methods
   async uploadPropertyImages(propertyId: string, files: Express.Multer.File[]): Promise<PropertyImage[]> {
-    // Check if property exists
     const property = await this.findOne(propertyId)
     if (!property) {
       throw new NotFoundException('Property not found')
     }
 
-    // Check current image count
     const currentImageCount = await this.propertyImageModel.count({
       where: { propertyId }
     })
@@ -333,13 +372,8 @@ export class PropertiesService {
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       
-      // Upload to Cloudinary
-      const imageUrl = await this.cloudinaryService.uploadImage(file, 'properties')
-      
-      // Get Cloudinary public ID from URL
+      const imageUrl = await this.cloudinaryService.uploadImage(file, 'properties')      
       const cloudinaryPublicId = this.cloudinaryService.getPublicIdFromUrl(imageUrl)
-      
-      // Create PropertyImage record
       const propertyImage = await this.propertyImageModel.create({
         propertyId,
         imageUrl,

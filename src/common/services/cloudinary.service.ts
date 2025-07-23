@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common'
+import { Injectable, BadRequestException, Logger } from '@nestjs/common'
 import { v2 as cloudinary } from 'cloudinary'
 import { ConfigService } from '@nestjs/config'
 
@@ -11,20 +11,13 @@ export class CloudinaryService {
   ]
 
   constructor(private configService: ConfigService) {
-    // Check if CLOUDINARY_URL is available first, then fall back to individual config
     const cloudinaryUrl = this.configService.get('CLOUDINARY_URL')
     
     if (cloudinaryUrl) {
-      // Use CLOUDINARY_URL if available (recommended approach)
-      cloudinary.config(cloudinaryUrl)
-    } else {
-      // Fall back to individual environment variables
-      cloudinary.config({
-        cloud_name: this.configService.get('CLOUDINARY_CLOUD_NAME'),
-        api_key: this.configService.get('CLOUDINARY_API_KEY'),
-        api_secret: this.configService.get('CLOUDINARY_API_SECRET'),
-      })
+      return cloudinary.config(cloudinaryUrl)
     }
+    Logger.error('CLOUDINARY_URL is not set')
+    throw new Error('CLOUDINARY_URL is not set')
   }
 
   private validateImageFile(file: Express.Multer.File): void {
@@ -51,10 +44,8 @@ export class CloudinaryService {
 
   async uploadImage(file: Express.Multer.File, folder: string = 'properties'): Promise<string> {
     try {
-      // Validate file format
       this.validateImageFile(file)
 
-      // Convert buffer to base64 string for upload
       const base64Image = file.buffer.toString('base64')
       const dataURI = `data:${file.mimetype};base64,${base64Image}`
       

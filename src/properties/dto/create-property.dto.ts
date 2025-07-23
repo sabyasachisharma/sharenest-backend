@@ -46,6 +46,16 @@ export class CreatePropertyDto {
   @IsString()
   address: string
 
+  @ApiProperty({ example: 'Main Street', required: false })
+  @IsOptional()
+  @IsString()
+  street?: string
+
+  @ApiProperty({ example: '123A', required: false })
+  @IsOptional()
+  @IsString()
+  houseNumber?: string
+
   @ApiProperty({ example: 1500 })
   @IsNotEmpty()
   @Type(() => Number)
