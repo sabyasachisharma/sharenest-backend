@@ -2,317 +2,270 @@
 
 Modern sublet and room-sharing platform API built with NestJS, TypeScript, and PostgreSQL.
 
-## 🚀 Features
+## Quick Start
 
-- JWT-based authentication with refresh tokens
-- Role-based access control (Tenant/Landlord)
-- Email verification and password reset
-- Property listing management with image uploads
-- Advanced search with multiple filters
-- Booking system with approval workflow
-- Review and rating system
-- Favorite properties functionality
-
-## 🛠️ Tech Stack
-
-- Node.js & TypeScript
-- NestJS framework
-- PostgreSQL with Sequelize ORM
-- JWT for authentication
-- Nodemailer for email services
-- Multer for file uploads
-- Swagger for API documentation
-
-## 📋 Prerequisites
-
+### Prerequisites
 - Node.js (v16+)
 - PostgreSQL
 - SMTP server for emails
 
-## 🔧 Installation
+### Installation
 
-
-## Create Migrations
-
-Check Sequelize CLI commands:
-<https://sequelize.org/v5/manual/migrations.html#the-cli>
-
-Create Migration:
-```bash
-npx sequelize-cli migration:generate --name create-user-table
-```
-
-Run Migrations:
-```bash
-npx sequelize-cli db:migrate
-```
-
-Undo Migrations:
-```bash
-npx sequelize-cli db:migrate:undo
-```
-
-
-1. Clone the repository
-2. Copy `.env.example` to `.env` and configure:
-   ```env
-   # Application
-   NODE_ENV=development
-   PORT=3000
-   API_URL=http://localhost:3000
-   FRONTEND_URL=http://localhost:8080
-
-   # Database
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_USERNAME=postgres
-   DB_PASSWORD=postgres
-   DB_NAME=sharenest_db
-
-   # JWT
-   JWT_SECRET=your-super-secret-jwt-key-change-in-production
-   JWT_ACCESS_EXPIRATION=15m
-   JWT_REFRESH_EXPIRATION=7d
-
-   # Email
-   EMAIL_HOST=smtp.example.com
-   EMAIL_PORT=587
-   EMAIL_USER=user@example.com
-   EMAIL_PASSWORD=your-email-password
-   EMAIL_FROM=no-reply@sharenest.com
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd sharenest-backend
    ```
-3. Install dependencies:
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
-4. Start the development server:
+
+4. **Database Setup**
+   ```bash
+   # Create database
+   createdb sharenest_db
+   
+   # Run migrations
+   npx sequelize-cli db:migrate
+   ```
+
+5. **Start Development Server**
    ```bash
    npm run start:dev
    ```
 
+6. **Access the API**
+   - API: http://localhost:3000/api
+   - Swagger Docs: http://localhost:3000/api/docs
+
+
+##  Features
+
+- **Authentication System**
+  - JWT-based auth with refresh tokens
+  - Role-based access (Tenant/Landlord)
+  - Email verification & password reset
+  - Secure cookie handling
+
+- **Property Management**
+  - Create, update, delete properties
+  - Image upload with Cloudinary
+  - Advanced search with filters
+  - Property categories and amenities
+
+- **Booking System**
+  - Booking requests and approvals
+  - Date validation and conflicts
+  - Email notifications
+  - Status tracking
+
+- **User Features**
+  - User profiles with images
+  - Favorite properties
+  - Review and rating system
+  - Property owner/tenant roles
+
+## 📋 Database Migrations
+
+### Create New Migration
+```bash
+npx sequelize-cli migration:generate --name your-migration-name
+```
+
+### Run Migrations
+```bash
+npx sequelize-cli db:migrate
+```
+
+### Rollback Migration
+```bash
+npx sequelize-cli db:migrate:undo
+```
+
+### Check Migration Status
+```bash
+npx sequelize-cli db:migrate:status
+```
+
 ## 📚 API Documentation
 
+### Interactive Documentation
+Access the full Swagger API documentation at: **http://localhost:3000/api/docs**
+
+### Quick API Reference
+
+#### 🔐 Authentication Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/login` | User login |
+| POST | `/api/auth/refresh-token` | Refresh access token |
+| POST | `/api/auth/forgot-password` | Request password reset |
+| POST | `/api/auth/reset-password` | Reset password with token |
+
+#### 🏠 Property Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/properties` | Search properties with filters |
+| POST | `/api/properties` | Create property (Landlord only) |
+| GET | `/api/properties/:id` | Get property details |
+| PUT | `/api/properties/:id` | Update property |
+| DELETE | `/api/properties/:id` | Delete property |
+| POST | `/api/properties/:id/images` | Upload property images |
+
+#### 📅 Booking Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/bookings` | Get user bookings |
+| POST | `/api/bookings` | Create booking request |
+| PUT | `/api/bookings/:id/status` | Update booking status |
+
+#### ⭐ Review Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/reviews` | Get reviews |
+| POST | `/api/reviews` | Create review |
+
+#### 👤 User Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/users/profile` | Get user profile |
+| PUT | `/api/users/profile` | Update profile |
+| POST | `/api/users/favorites` | Toggle favorite property |
+
 ### Authentication
-
-#### Register User
-- **POST** `/api/auth/register`
-- Creates a new user account
-- Body:
-  ```json
-  {
-    "firstName": "John",
-    "lastName": "Doe",
-    "email": "john.doe@example.com",
-    "password": "Password123!",
-    "role": "tenant",
-    "phone": "+1234567890",
-    "bio": "Looking for a nice place"
-  }
-  ```
-
-#### Login
-- **POST** `/api/auth/login`
-- Authenticates user and returns tokens
-- Body:
-  ```json
-  {
-    "email": "john.doe@example.com",
-    "password": "Password123!",
-    "rememberMe": true
-  }
-  ```
-
-#### Refresh Token
-- **POST** `/api/auth/refresh-token`
-- Gets new access token using refresh token
-- Body:
-  ```json
-  {
-    "refreshToken": "token"
-  }
-  ```
-
-#### Forgot Password
-- **POST** `/api/auth/forgot-password`
-- Sends password reset email
-- Body:
-  ```json
-  {
-    "email": "john.doe@example.com"
-  }
-  ```
-
-### Properties
-
-#### Create Property
-- **POST** `/api/properties`
-- Creates new property listing (Landlords only)
-- Body:
-  ```json
-  {
-    "title": "Cozy Studio Downtown",
-    "description": "Beautiful studio apartment...",
-    "category": "sublet",
-    "city": "New York",
-    "postcode": "10001",
-    "address": "123 Main St",
-    "price": 1500,
-    "bedrooms": 1,
-    "bathrooms": 1,
-    "availableFrom": "2023-06-01",
-    "availableTo": "2023-12-31",
-    "amenities": ["WiFi", "AC"]
-  }
-  ```
-
-#### Search Properties
-- **GET** `/api/properties`
-- Searches properties with filters
-- Query Parameters:
-  - `query`: Search text
-  - `category`: Property category
-  - `city`: City name
-  - `minPrice`: Minimum price
-  - `maxPrice`: Maximum price
-  - `availableFrom`: Start date
-  - `availableTo`: End date
-  - `page`: Page number
-  - `limit`: Items per page
-
-### Bookings
-
-#### Create Booking
-- **POST** `/api/bookings`
-- Creates booking request (Tenants only)
-- Body:
-  ```json
-  {
-    "propertyId": "uuid",
-    "startDate": "2023-06-01",
-    "endDate": "2023-06-15",
-    "message": "I'm interested in booking..."
-  }
-  ```
-
-#### Update Booking Status
-- **PUT** `/api/bookings/:id/status`
-- Updates booking status (Landlords only)
-- Body:
-  ```json
-  {
-    "status": "approved"
-  }
-  ```
-
-### Reviews
-
-#### Create Review
-- **POST** `/api/reviews`
-- Creates property or user review
-- Body:
-  ```json
-  {
-    "type": "property",
-    "propertyId": "uuid",
-    "rating": 5,
-    "comment": "Great place!"
-  }
-  ```
-
-## 🔐 Authentication
-
-The API uses JWT tokens for authentication:
-
-1. Access Token: Short-lived token (15 minutes)
-2. Refresh Token: Long-lived token (7 days)
-
-Include the access token in the Authorization header:
+All protected endpoints require JWT token in Authorization header:
 ```
-Authorization: Bearer <access_token>
+Authorization: Bearer <your-jwt-token>
 ```
 
-## 🚦 Error Handling
+## 🔧 Development
 
-The API uses standard HTTP status codes:
+### Available Scripts
 
-- 200: Success
-- 201: Created
-- 400: Bad Request
-- 401: Unauthorized
-- 403: Forbidden
-- 404: Not Found
-- 500: Server Error
+```bash
+# Development
+npm run start:dev          # Start with hot reload
+npm run start:debug        # Start in debug mode
 
-Error responses include:
-```json
-{
-  "statusCode": 400,
-  "message": "Error message",
-  "error": "Bad Request"
-}
+# Production
+npm run build              # Build for production
+npm run start:prod         # Start production server
+
+# Testing
+npm run test               # Run unit tests
+npm run test:e2e          # Run integration tests
+npm run test:cov          # Run tests with coverage
+
+# Code Quality
+npm run lint              # Run ESLint
+npm run lint:fix          # Fix ESLint issues
+npm run format            # Format with Prettier
 ```
 
-## 📝 Development Guidelines
+### Project Structure
 
-1. Use TypeScript strict mode
-2. Follow NestJS best practices
-3. Write comprehensive unit tests
-4. Document all new endpoints
-5. Follow REST API conventions
-6. Use proper HTTP methods and status codes
+```
+src/
+├── auth/              # Authentication module
+│   ├── dto/          # Data transfer objects
+│   ├── guards/       # Auth guards
+│   └── strategies/   # JWT strategies
+├── users/            # User management
+├── properties/       # Property management
+├── bookings/         # Booking system
+├── reviews/          # Review system
+├── mail/             # Email service
+│   └── templates/    # Email templates
+├── common/           # Shared utilities
+└── config/           # Configuration files
+```
 
-## 🔍 API Documentation
+### Environment Variables
 
-Swagger documentation is available at `/api/docs` when running in development mode.
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NODE_ENV` | Environment | `development` |
+| `PORT` | Server port | `3000` |
+| `DB_HOST` | Database host | `localhost` |
+| `DB_PORT` | Database port | `5432` |
+| `JWT_SECRET` | JWT secret key | Required |
+| `EMAIL_HOST` | SMTP host | Required |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary name | Required |
+
+### Testing
+
+```bash
+# Unit tests
+npm run test
+
+# Integration tests
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
+```
+
+### Docker Setup
+
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
 
 ## 📦 Database Models
 
-### User
-- id (UUID)
-- firstName (string)
-- lastName (string)
-- email (string, unique)
-- password (string, hashed)
-- role (enum: tenant, landlord)
-- phone (string, optional)
-- profileImage (string, optional)
-- bio (text, optional)
-- isVerified (boolean)
+### Core Entities
 
-### Property
-- id (UUID)
-- ownerId (UUID, FK to User)
-- title (string)
-- description (text)
-- category (enum)
-- city (string)
-- postcode (string)
-- address (string)
-- price (decimal)
-- bedrooms (integer)
-- bathrooms (integer)
-- availableFrom (date)
-- availableTo (date, optional)
-- amenities (string[])
-- isActive (boolean)
+**User**
+- `id` - UUID primary key
+- `firstName`, `lastName` - User names
+- `email` - Unique email address
+- `password` - Hashed password
+- `role` - tenant | landlord
+- `phone` - Contact number (optional)
+- `profileImage` - Profile picture URL
+- `isVerified` - Email verification status
 
-### Booking
-- id (UUID)
-- propertyId (UUID, FK to Property)
-- tenantId (UUID, FK to User)
-- startDate (date)
-- endDate (date)
-- status (enum: pending, approved, rejected, cancelled)
-- message (text, optional)
+**Property**
+- `id` - UUID primary key
+- `ownerId` - Foreign key to User
+- `title`, `description` - Property details
+- `category` - Property type enum
+- `city`, `postcode`, `address` - Location
+- `price` - Monthly rent
+- `bedrooms`, `bathrooms` - Property specs
+- `availableFrom`, `availableTo` - Availability dates
+- `amenities` - Array of features
+- `isActive` - Publication status
 
-### Review
-- id (UUID)
-- reviewerId (UUID, FK to User)
-- reviewedId (UUID, FK to User, optional)
-- propertyId (UUID, FK to Property, optional)
-- type (enum: property, user)
-- rating (integer, 1-5)
-- comment (text, optional)
+**Booking**
+- `id` - UUID primary key
+- `propertyId` - Foreign key to Property
+- `tenantId` - Foreign key to User
+- `startDate`, `endDate` - Booking period
+- `status` - pending | approved | rejected | cancelled
+- `message` - Tenant's message
+
+## 🚦 HTTP Status Codes
+
+| Code | Meaning | Usage |
+|------|---------|-------|
+| 200 | OK | Successful GET, PUT |
+| 201 | Created | Successful POST |
+| 400 | Bad Request | Invalid request data |
+| 401 | Unauthorized | Missing/invalid token |
+| 403 | Forbidden | Insufficient permissions |
+| 404 | Not Found | Resource doesn't exist |
+| 500 | Server Error | Internal server error |
 
 ## 📄 License
 

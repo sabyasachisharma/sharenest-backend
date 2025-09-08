@@ -147,8 +147,8 @@ export class PropertiesService {
     
     if (query) {
       whereClause[Op.or] = [
-        { title: { [Op.iLike]: `%${query}%` } },
-        { description: { [Op.iLike]: `%${query}%` } },
+        { title: { [Op.like]: `%${query}%` } },
+        { description: { [Op.like]: `%${query}%` } },
       ]
     }
     
@@ -157,11 +157,11 @@ export class PropertiesService {
     }
     
     if (city) {
-      whereClause.city = { [Op.iLike]: `%${city}%` }
+      whereClause.city = { [Op.like]: `%${city}%` }
     }
     
     if (postcode) {
-      whereClause.postcode = { [Op.iLike]: `%${postcode}%` }
+      whereClause.postcode = { [Op.like]: `%${postcode}%` }
     }
     
     if (minPrice) {

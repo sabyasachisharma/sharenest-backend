@@ -6,6 +6,7 @@ import {
   Get,
   BadRequestException,
   Req,
+  Query,
 } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { Request } from "express"
@@ -106,5 +107,16 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Server is operational' })
   async healthCheck() {
     return { status: 'ok' }
+  }
+
+  @Get('check-email')
+  @ApiOperation({ summary: 'Check if email exists' })
+  @ApiResponse({ status: 200, description: 'Returns whether email exists', type: Object })
+  async checkEmail(@Query('email') email?: string) {
+    if (!email) {
+      throw new BadRequestException('Email is required')
+    }
+    const exists = await this.authService.checkEmailExists(email)
+    return { exists }
   }
 }

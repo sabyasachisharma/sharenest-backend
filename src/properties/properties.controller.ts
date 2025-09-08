@@ -43,13 +43,6 @@ export class PropertiesController {
     return this.propertiesService.search(searchDto)
   }
 
-  @Get('all')
-  @ApiOperation({ summary: 'Get all active properties for grid view' })
-  @ApiResponse({ status: 200, description: 'Return all active properties' })
-  async getAllProperties(@Query() searchDto: PropertySearchDto) {
-    return this.propertiesService.getAllActiveProperties(searchDto)
-  }
-
   @Get('featured')
   @ApiOperation({ summary: 'Get featured properties' })
   @ApiResponse({ status: 200, description: 'Return featured properties' })

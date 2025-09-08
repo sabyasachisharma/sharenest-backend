@@ -98,6 +98,7 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+    Logger.log(`Updating user with updateUserDto: ${JSON.stringify(updateUserDto)}`)
     const user = await this.findOne(id)
     
     // If email is being updated, check for uniqueness
@@ -109,6 +110,7 @@ export class UsersService {
     }
     
     await user.update(updateUserDto)
+    Logger.log(`User updated successfully with id: ${id}`)
     return user
   }
 
